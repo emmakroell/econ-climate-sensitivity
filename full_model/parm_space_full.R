@@ -266,10 +266,13 @@ convex_hull_plot <- function(x, name, colvec=c("orange","purple","green"),
   if (exists("p3dsave")) par3d(p3dsave)
   
   # axes labels
-  # mtext3d(edge="x+-",text=intToUtf8(951),line=2,cex=2)
   mtext3d(edge="x+-",text=expression(eta),line=2,cex=2)
   mtext3d(edge="y+-",text=expression(xi),line=2,cex=2)
   mtext3d(edge="z+-",text=expression(gamma),line=2,cex=2)
+  # # if expression() doesn't work:
+  # mtext3d(edge="x+-",text=intToUtf8(951),line=2,cex=2)
+  # mtext3d(edge="y+-",text=intToUtf8(958),line=2,cex=2)
+  # mtext3d(edge="z+-",text=intToUtf8(947),line=2,cex=2)
   
   # narrow window
   par3d(windowRect = c(100, 150, 800, 850))

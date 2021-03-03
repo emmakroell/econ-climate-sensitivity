@@ -159,7 +159,7 @@ data_scaled <- data.frame(eta = scaled_inputs[,1],
                           gamma = scaled_inputs[,3],
                           alpha = scaled_inputs[,4],
                           ECS = scaled_inputs[,5],
-                          C_UP_preind = scaled_inputs[,6],
+                          C_UP = scaled_inputs[,6],
                           outcome = result1[7])
 
 # Fit the model
@@ -214,7 +214,7 @@ data_scaled <- data.frame(eta = scaled_inputs[,1],
                           gamma = scaled_inputs[,3],
                           alpha = scaled_inputs[,4],
                           ECS = scaled_inputs[,5],
-                          C_UP_preind = scaled_inputs[,6],
+                          C_UP = scaled_inputs[,6],
                           outcome = result2[7])
 
 # Fit the model

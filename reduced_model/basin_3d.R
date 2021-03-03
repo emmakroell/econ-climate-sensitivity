@@ -294,6 +294,9 @@ convex_hull_plot <- function(x, markup, colvec=c("orange","purple","green"),
   # axes labels
   mtext3d(edge="x++",text=expression(lambda),line=2,cex=2)
   mtext3d(edge="y--",text=expression(omega),line=2,cex=2)
+  # # if expression() doesn't work:
+  # mtext3d(edge="x++",text=intToUtf8(955),line=2,cex=2)
+  # mtext3d(edge="y--",text=intToUtf8(969),line=2,cex=2)
   mtext3d(edge="z-+",text="d",line=2,cex=2)
 
   par3d(windowRect = c(100, 150, 800, 850))

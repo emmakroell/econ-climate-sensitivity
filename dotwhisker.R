@@ -33,26 +33,28 @@ tnms <- c("without climate","without damages and policy",
 L <- map(1:3, ~bind_rows(list(PRCC=get_prcc(.),logistic=get_logist(.)), .id="type"))
 names(L) <- tnms
 L2 <- (bind_rows(L,.id="model"))
-## order by average PRCC
-PRCC_levs <- (L2
-    %>% filter(type=="PRCC")
-    %>% group_by(param)
-    %>% summarise(est=mean(est,na.rm=TRUE))
-    %>% arrange(est)
-    %>% pull(param) %>% c()
-)
-L2 <- mutate(L2,across(param, ~factor(.,levels=PRCC_levs))) %>%
-                drop_na(param)  ## 
+
+# set the factor levels by hands:
+L2 <- mutate(L2,across(param, ~factor(.,levels=c("ECS", "C_UP", "alpha", "gamma", "eta", "markup"))),
+             across(model, ~factor(.,levels=c("without climate", "without damages and policy", "with damages and policy")))) %>%
+    drop_na(param) 
 
 
 gg0 <- (ggplot(L2,
-       aes(est, param, xmin=lwr, xmax=upr)) +
-    geom_pointrange() +
-    facet_grid(model~type ,scale="free") +
-    geom_vline(xintercept=0,lty=2) +
-    labs(x="",y="") + 
-    theme(panel.spacing=grid::unit(0,"lines"),
-          strip.text.y.right = element_text(angle = 0))
+               aes(est, param, colour = model, xmin=lwr, xmax=upr)) +
+            geom_pointrange() +
+            facet_grid(model~type ,scale="free") +
+            geom_vline(xintercept=0,lty=2) +
+            scale_y_discrete(labels = c('eta' = expression(eta),
+                                        'markup' = expression(xi),
+                                        'gamma' = expression(gamma),
+                                        'alpha' = expression(alpha),
+                                        'ECS' = "S",
+                                        'C_UP' = expression(C^UP))) +
+            labs(x="",y="") + 
+            theme(panel.spacing=grid::unit(0,"lines"),
+                  strip.text.y.right = element_text(angle = 0),
+                  legend.position = "none")
 )
 
-#ggsave("dotwhisker.pdf",height=4,width=8)
+ggsave("dotwhisker.pdf",height=4,width=8)
