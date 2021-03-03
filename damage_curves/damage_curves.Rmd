@@ -1,0 +1,250 @@
+---
+title: "Damage curves"
+author: "Emma Holmes"
+date: "June 24, 2019 (Last updated March 2 2021 to fix file paths)"
+output: html_document
+---
+```{r packages, warning=FALSE, echo=FALSE, message=FALSE}
+library(knitr)
+library(kableExtra)
+library(RColorBrewer)
+library(english)   # changes integers to English
+library(here)   # more usable file paths
+
+source(here("full_model", "pars.R"))
+source(here("damage_curves", "functions.R"))
+Dam_cols <- brewer.pal(n = 8, name = "YlOrRd")[4:8]
+Dam_cols_2 <- brewer.pal(n = 8, name = "RdPu")[4:8]
+```
+
+Many studies have attempted to estimate the impact of a certain level of warming on global GDP. The methods and scope of these studies vary greatly. Tol (2009, 2014, 2018) gathered these estimates and fit a curve to the various points. Unfortunately, Tol's work suffered from numerous computational errors. It also suffered from a greater conceptual error, in that the studies followed very different methodologies, making comparison between them dubious at best. In fact, some of these studies state very clearly that they should not be compared to other global estimates of climate change damages. In the fifth IPCC Assessment Report, the authors of the chapter dealing with this aspect (chapter 10) chose simply to present the plot of the different points, without fitting a curve. They point out that that: 
+
+"Welfare impacts have been estimated with different methods, ranging from expert elicitation to econometric studies and simulation models. Different studies include different aspects of the impacts of climate change, but no estimate is complete; most experts speculate that excluded impacts are on balance negative. Estimates across the studies reflect different assumptions about inter-sectoral, inter-regional, and intertemporal interactions, about adaptation, and about the monetary values of impacts. Aggregate estimates of costs mask significant differences in impacts across sectors, regions, countries, and populations. Relative to their income, economic impacts are higher for poorer people.''
+
+Despite the problems inherent in relying too much on these studies, below I present the data points in question. I choose to use data from Nordhaus and Moffat (2017), who attempted to replicate Tol's 2009 and 2014 studies. Below are their corrected estimates of the data points.
+
+```{r read_in, echo=FALSE}
+dam_pts <- read.csv(here("damage_curves","damage_points.csv"),
+                    header=TRUE, sep=",")
+kable(dam_pts) %>%
+  kable_styling(bootstrap_options = c("striped", "hover"))
+```
+
+And here is a scatter plot of the above data points:
+
+```{r plot_dam_pts,echo=FALSE}
+plot(dam_pts$Degree,dam_pts$Damage, ylim=c(-20,2.5),xlab='Increase in temp from preindustrial times in degrees Celsius', ylab='Percentage effect on GDP', main='Damage point estimates')
+```
+
+Below I flip the data points (so that damage is a positive number as it is in our model), and superimpose the three curves we've been using. Recall that the Nordhaus curve is a inverse quadratic fit to these data points, whereas the Weitzman curve adds a T^6.754 term so that the curve goes through (6,50) and (12,99), and the Stern curve keeps the same form with T^6.754 but goes through (4,50).
+
+```{r plot_dam_flipped, echo=FALSE}
+par(las=1)
+dam_pts$Damage <- dam_pts$Damage * -1
+
+Active <- list(
+  Damage_N = 'Nordhaus'
+)
+
+Pars <- Parms
+
+temp_vec <- seq(0,10,by=0.001)
+Nordhaus_dam <- f_Dam_N(Temp=temp_vec, pars=Pars, active=Active)*100
+Active$Damage_N = 'Weitzman'
+W_dam <- f_Dam_N(Temp=temp_vec, pars=Pars, active=Active)*100
+Active$Damage_N = 'Stern'
+Stern_dam <- f_Dam_N(Temp=temp_vec, pars=Pars, active=Active)*100
+
+par(las=1)
+plot(0,type='n', xlim=c(0,6), ylim=c(-2.5,51),xlab='Increase in temp from preindustrial times in degrees Celsius', ylab='Percentage damage to GDP', main='Damage curves from the literature')
+points(dam_pts$Degree,dam_pts$Damage)
+lines(temp_vec,Nordhaus_dam,col='green')
+lines(temp_vec,W_dam,col='dodgerblue1')
+lines(temp_vec,Stern_dam,col='blue1')
+legend(x=0,y=51,legend = c('Nordhaus','Weitzman','Stern'), col = c('green','dodgerblue1','blue1'), lty=1:1, box.lty=0)
+```
+
+Given that there is considerable uncertainty about the number of tipping points the climate could hit after +2$^\circ{}$C, it is not possible to know which curve is the most accurate. It essentially depends on what you assume about the possibility of tipping points in the climate. 
+
+Experts warn that there are several climatic tipping points that could be reached if the Earth warms by +4$^\circ{}$C: the melting of the Greenland or Antarctic ice sheets, changes to the Atlantic Meridional Overturning Circulation, or changes to the Amazon rainforest, to name a few (Lenton et al., 2008; Kriegler et al., 2009). While there is considerable uncertainty about when these tipping points would be reached, and what their effects could be, damage curves that do not allow for tipping points ignore an important aspect of climate science. Using only an inverse quadratic damage curve will necessarily result in a prediction of minimal climate damages that do not align with the science of tipping points (Weitzman, 2012).
+
+Given the uncertainty around tipping points and their effects, we choose to create five different damage curves that represent five different scenarios for damages at +4$^\circ{}$C: 10, 20, 30, 40, and 50%.
+
+### Solving for the new damage curves
+
+I choose to follow Weitzman (2012), in assuming that the damage curve takes the form 
+
+$$
+\mathbf{D}(T) = 1 - \frac{1}{1+\alpha T ^2 + \beta T^\gamma}
+$$
+
+where $\alpha = 0.00236$. This form keeps the same value for $\alpha$ as the DICE model, and assures that predicted damages are in line with those of the DICE model and other standard IAMs for temperatures up to about +2$^\circ$C. Since the DICE damage curve was fitted to the data points, this also assures that our damage curve is in line with estimates of damages up to +2$^\circ{}$C. However, our curve ignores the estimates after that point, and should instead be interpreted as different tipping point scenarios.
+
+We want the curve to go through a single point, representing possible damages at +4$^\circ{}$C, so we can solve directly for $\beta$.
+
+Solution:
+$$ 
+(1 - \mathbf{D}) = \frac{1}{1+\alpha T ^2 + \beta T^\gamma} \\
+(1 - \mathbf{D}) (1+\alpha T ^2 + \beta T^\gamma) = 1 \\
+(1 - \mathbf{D}) (\beta T^\gamma) = 1 - (1 - \mathbf{D}) (1+\alpha T ^2) \\
+\beta = \frac{1 - (1 - \mathbf{D}) (1+\alpha T ^2)}{(1 - \mathbf{D}) T^\gamma}
+$$
+
+```{r beta_func}
+beta_func <- function(temp,dam,pars){
+  beta <- (1 - (1 - dam) * (1 + pars[['dam_2']] * temp^2)) / ((1 - dam) * temp^pars[['dam_exp']])
+  return(beta)
+}
+```
+
+Since we have previously discussed that the exponent of $\gamma=6.754$ in the damage function is a bit strange, I first fit curves using $\gamma=7$ 
+
+```{r solving}
+Pars[['dam_exp']] = 7
+
+damages <- seq(0.1,0.5,by=0.1)
+dam_coefs <- beta_func(temp=4,dam=damages,pars = Pars)
+names(dam_coefs) <- paste0("dam_",as.english(round(damages*100)))
+
+Pars <- c(Pars,dam_coefs)
+```
+
+
+```{r print,echo=FALSE}
+cat(' dam_ten:', Pars[['dam_ten']],'\n dam_twenty:', Pars[['dam_twenty']],
+    '\n dam_thirty:', Pars[['dam_thirty']],'\n dam_forty:', Pars[['dam_forty']],
+    '\n dam_fifty:', Pars[['dam_fifty']])
+
+```
+
+```{r new_curve}
+new_dams <- function(Temp, pars, active) {
+  switch(active$Damage_N,
+         'None' = 0 * Temp,
+                  '10at4' = 1 - 1/(1 + pars[['dam_2']] * Temp^2 + pars[['dam_ten']] * Temp^pars[['dam_exp']]),
+         '20at4' = 1 - 1/(1 + pars[['dam_2']] * Temp^2 + pars[['dam_twenty']] * Temp^pars[['dam_exp']]),
+         '30at4' = 1 - 1/(1 + pars[['dam_2']] * Temp^2 + pars[['dam_thirty']] * Temp^pars[['dam_exp']]),
+         '40at4' = 1 - 1/(1 + pars[['dam_2']] * Temp^2 + pars[['dam_forty']] * Temp^pars[['dam_exp']]),
+         '50at4' = 1 - 1/(1 + pars[['dam_2']] * Temp^2 + pars[['dam_fifty']] * Temp^pars[['dam_exp']])
+  )
+}
+```
+
+### Plotting the new curves
+
+Below I plot the five curves:
+
+```{r compute_dams, echo=FALSE}
+Active$Damage_N = '10at4'
+ten_dam <- new_dams(Temp=temp_vec, pars=Pars, active=Active)*100
+Active$Damage_N = '20at4'
+twenty_dam <- new_dams(Temp=temp_vec, pars=Pars, active=Active)*100
+Active$Damage_N = '30at4'
+thirty_dam <- new_dams(Temp=temp_vec, pars=Pars, active=Active)*100
+Active$Damage_N = '40at4'
+forty_dam <- new_dams(Temp=temp_vec, pars=Pars, active=Active)*100
+Active$Damage_N = '50at4'
+fifty_dam <- new_dams(Temp=temp_vec, pars=Pars, active=Active)*100
+
+fixed_pts <- read.csv(here("damage_curves","fixed_dam_pts.csv"),
+                      header=TRUE, sep=",")
+par(las=1)
+plot(0,type='n', xlim=c(0,6), ylim=c(-2.5,51),xlab='Increase in temp from preindustrial times in degrees Celsius', ylab='Percentage damage to GDP', main='New damage curves')
+points(dam_pts$Degree,dam_pts$Damage)
+points(fixed_pts$Degree,fixed_pts$Damage,col='blue',pch=3)
+lines(temp_vec,ten_dam,col=Dam_cols[1])
+lines(temp_vec,twenty_dam,col=Dam_cols[2])
+lines(temp_vec,thirty_dam,col=Dam_cols[3])
+lines(temp_vec,forty_dam,col=Dam_cols[4])
+lines(temp_vec,fifty_dam,col=Dam_cols[5])
+legend(x=0,y=51,legend = c('10% at +4','20% at +4','30% at +4','40% at +4','50% at +4'), col = Dam_cols, lty=1:1, box.lty=0)
+```
+
+In the above graphs, the plus signs mark the points the curves are designed to hit. The damage estimate points (circles) are plotted for illustration purposes only --- I am ignoring the points in favour of a scenario analysis.
+
+Below I compare these curves to the ones from the literature. The curves follow about the same path as the Nordhaus until about +2$^\circ{}$C, then diverge.
+The 10% damages at +4 curve is close to the Weitzman curve, while the 50% damage at +4 curve is of course nearly identical to the Stern curve (as this was his assumption in designing the curve).
+
+```{r compare_curves, echo=FALSE}
+par(las=1)
+plot(0,type='n', xlim=c(0,10), ylim=c(-2.5,100),xlab='Increase in temp from preindustrial times in degrees Celsius', ylab='Percentage damage to GDP', main='Comparison of damage curves')
+points(dam_pts$Degree,dam_pts$Damage)
+lines(temp_vec,Nordhaus_dam,col='green')
+lines(temp_vec,W_dam,col='dodgerblue1')
+lines(temp_vec,Stern_dam,col='blue1')
+lines(temp_vec,ten_dam,col=Dam_cols[1])
+lines(temp_vec,twenty_dam,col=Dam_cols[2])
+lines(temp_vec,thirty_dam,col=Dam_cols[3])
+lines(temp_vec,forty_dam,col=Dam_cols[4])
+lines(temp_vec,fifty_dam,col=Dam_cols[5])
+legend(x=0,y=100,legend = c('Nordhaus','Weitzman','Stern','10% at +4','20% at +4','30% at +4','40% at +4','50% at +4'), col = c('green','dodgerblue1','blue1',Dam_cols), lty=1:1, box.lty=0)
+
+```
+
+### Changing the damage exponent
+
+I can also easily use the above code to solve for the damage curves if I use the exponent from Weitzman (2012) ($\gamma = 6.754$).
+
+```{r solving2}
+Pars[['dam_exp']] = 6.754
+
+Pars[['dam_ten']]     = beta_func(4,0.1,pars=Pars)
+Pars[['dam_twenty']]  = beta_func(4,0.2,pars=Pars)
+Pars[['dam_thirty']]  = beta_func(4,0.3,pars=Pars)
+Pars[['dam_forty']]   = beta_func(4,0.4,pars=Pars)
+Pars[['dam_fifty']]   = beta_func(4,0.5,pars=Pars)
+```
+
+```{r print_dam_pars,echo=FALSE}
+cat(' dam_ten:', Pars[['dam_ten']],'\n dam_twenty:', Pars[['dam_twenty']],
+    '\n dam_thirty:', Pars[['dam_thirty']],'\n dam_forty:', Pars[['dam_forty']],
+    '\n dam_fifty:', Pars[['dam_fifty']])
+```
+
+In this case, the fifty percent damage curve is essentially identical to the curve from Dietz and Stern (2015) (the difference in the coefficients is -2.316953e-05). The resulting curves are plotted below.
+
+```{r compute_dams2, echo=FALSE}
+Active$Damage_N = '10at4'
+ten_dam_2 <- new_dams(Temp=temp_vec, pars=Pars, active=Active)*100
+Active$Damage_N = '20at4'
+twenty_dam_2 <- new_dams(Temp=temp_vec, pars=Pars, active=Active)*100
+Active$Damage_N = '30at4'
+thirty_dam_2 <- new_dams(Temp=temp_vec, pars=Pars, active=Active)*100
+Active$Damage_N = '40at4'
+forty_dam_2 <- new_dams(Temp=temp_vec, pars=Pars, active=Active)*100
+Active$Damage_N = '50at4'
+fifty_dam_2 <- new_dams(Temp=temp_vec, pars=Pars, active=Active)*100
+
+par(las=1)
+plot(0,type='n', xlim=c(0,6), ylim=c(-2.5,51),xlab='Increase in temp from preindustrial times in degrees Celsius', ylab='Percentage damage to GDP', main=expression(paste("New damage curves: ",gamma, '= 6.754')))
+points(dam_pts$Degree,dam_pts$Damage)
+points(fixed_pts$Degree,fixed_pts$Damage,col='blue',pch=3)
+lines(temp_vec,ten_dam_2,col=Dam_cols_2[1])
+lines(temp_vec,twenty_dam_2,col=Dam_cols_2[2])
+lines(temp_vec,thirty_dam_2,col=Dam_cols_2[3])
+lines(temp_vec,forty_dam_2,col=Dam_cols_2[4])
+lines(temp_vec,fifty_dam_2,col=Dam_cols_2[5])
+legend(x=0,y=51,legend = c('10% at +4','20% at +4','30% at +4','40% at +4','50% at +4'), col = Dam_cols_2, lty=1:1, box.lty=0)
+```
+
+The curves look very similar to the ones I estimated with $\gamma=7$, and in fact when they are plotted together we see the curves are almost identical:
+
+```{r compare_curves_gamma, echo=FALSE}
+par(las=1)
+plot(0,type='n', xlim=c(0,6), ylim=c(-2.5,51),xlab='Increase in temp from preindustrial times in degrees Celsius', ylab='Percentage damage to GDP', main='Comparison of damage curves')
+points(dam_pts$Degree,dam_pts$Damage)
+points(fixed_pts$Degree,fixed_pts$Damage,col='blue',pch=3)
+lines(temp_vec,ten_dam,col=Dam_cols[1])
+lines(temp_vec,twenty_dam,col=Dam_cols[2])
+lines(temp_vec,thirty_dam,col=Dam_cols[3])
+lines(temp_vec,forty_dam,col=Dam_cols[4])
+lines(temp_vec,fifty_dam,col=Dam_cols[5])
+lines(temp_vec,ten_dam_2,col=Dam_cols_2[1])
+lines(temp_vec,twenty_dam_2,col=Dam_cols_2[2])
+lines(temp_vec,thirty_dam_2,col=Dam_cols_2[3])
+lines(temp_vec,forty_dam_2,col=Dam_cols_2[4])
+lines(temp_vec,fifty_dam_2,col=Dam_cols_2[5])
+```
+
+
+
