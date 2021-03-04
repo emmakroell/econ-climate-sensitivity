@@ -1,3 +1,5 @@
+# FILE TO GENERATE FIGURE 3
+
 source("reduced_model/logistic_prcc_reduced.R",echo=TRUE)
 ## table_1
 ## prcc_res1, logistic_res1

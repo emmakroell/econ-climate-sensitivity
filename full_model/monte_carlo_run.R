@@ -304,14 +304,3 @@ plot_temp <- plot_temp + ggtitle("Temperature")
 grid.arrange(plot_lambda,plot_growth_Y,plot_debt_share,
              plot_infl, plot_emissions, plot_temp, nrow=2)
 
-#------------------------------------------------------------------------------
-## output in tikz
-# library(tikzDevice)
-# options(tz="TO")
-# 
-# tikz(file = "figure4.tex", width = 6, height = 4.5)
-# 
-# grid.arrange(plot_lambda,plot_growth_Y,plot_debt_share,
-#              plot_infl, plot_emissions, plot_temp, nrow=2)
-# 
-# dev.off()

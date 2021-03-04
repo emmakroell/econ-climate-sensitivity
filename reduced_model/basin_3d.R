@@ -272,7 +272,7 @@ close3d()
 ###' @param do_points
 ###' @param save_image T/F save image as png in reduced_model/basin_res
 convex_hull_plot <- function(x, markup, colvec=c("orange","purple","green"),
-                   alphavec=c(0.1,0.3,0.3),
+                   alphavec=c(0.3,0.3,0.3),
                    do_points=rep(FALSE, 3),
                    save_image = TRUE,
                    ...) {
