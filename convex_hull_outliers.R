@@ -92,9 +92,9 @@ convex_hull_plot <- function(x, markup_bound=1.6, eta_bound=0.2, gamma_bound = 0
   if (exists("p3dsave")) par3d(p3dsave)
   
   # axes labels
-  mtext3d(edge="x+-",text=expression(eta),line=2,cex=2)
-  mtext3d(edge="y+-",text=expression(xi),line=2,cex=2)
-  mtext3d(edge="z+-",text=expression(gamma),line=2,cex=2)
+  mtext3d(edge="x+-",text=expression(bar(eta)),line=2,cex=2)
+  mtext3d(edge="y+-",text=expression(bar(xi)),line=2,cex=2)
+  mtext3d(edge="z+-",text=expression(bar(gamma)),line=2,cex=2)
   
   # narrow window
   par3d(windowRect = c(100, 150, 800, 850))
