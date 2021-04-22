@@ -19,12 +19,12 @@ IC <- c(
   lambda  =  0.675, 
   omega   =  0.578,
   debt    =  1.53,
-  pop     = 4.83
+  pop     =  4.83
 )
 
 # Set up simulation
 Time <- c(
-  start         =     2020, 
+  start         =     2016, 
   end           =     2100,
   step          =     0.05
 )

@@ -11,17 +11,6 @@ library('gMOIP')
 source('reduced_model/pars.R')   # load parameters
 source('reduced_model/sim.R')    # load simulation file
 source('reduced_model/funcs.R')  # load functions
-# =============================================================================
-# Set up simulation
-Time <- c(
-  start         =     2020, 
-  end           =     2100,
-  step          =     0.05
-)
-
-Options <- list(
-  transform_vars  = FALSE 
-)
 #================================================================================
 create.parm.grid <- function(n_pts=20, type = 'sobol'){
   if (type == 'grid'){
@@ -51,12 +40,13 @@ create.parm.grid <- function(n_pts=20, type = 'sobol'){
 }
 
 #================================================================================
-explore.parm.space <- function(n_pts, type, trnsfm = FALSE, 
-                               plot.res = FALSE, lambda_init=0.9, 
-                               omega_init=0.9, debt_init = 0.3){
+explore.parm.space.3d <- function(n_pts, type, end_time = 2300,
+                               stopping_points = c(2100,2200,2300),
+                               lambda_init=0.9, omega_init=0.9,
+                               debt_init = 0.3){
   # name file to save data:
-  savefile <- sprintf("reduced_model/parms_res/npts_%g_type_%s_trnsfm_%s_lambs_%g_omg_%g_d_%g.Rdata",
-                      n_pts, type, trnsfm, lambda_init, omega_init, debt_init)
+  savefile <- sprintf("reduced_model/parms_res/npts_%g_type_%s_lambs_%g_omg_%g_d_%g_end%g.Rdata",
+                      n_pts, type, lambda_init, omega_init, debt_init, end_time)
   if (!file.exists(savefile)) {
     # Set initial conditions 
     IC <- c(
@@ -65,23 +55,29 @@ explore.parm.space <- function(n_pts, type, trnsfm = FALSE,
       debt    =  debt_init,
       pop     = 4.83
     )
+    
+    # Set up simulation
+    Time <- c(
+      start         =     2016, 
+      end           =     end_time,
+      step          =     0.05
+    )
+    
+    Options <- list(
+      transform_vars  = FALSE 
+    )
   
     # set-up grid
     grid <- create.parm.grid (n_pts = n_pts, type = type)
-    outcome <- rep(NA, nrow(grid))
-    cputime.start <- proc.time() # start timer
+    # list to save the results
+    result <- vector("list",nrow(grid))
     
     # for loop
     for (i in seq(1,nrow(grid))){
-      cat(i, 'out of', nrow(grid), '\n')
+      #cat(i, 'out of', nrow(grid), '\n')
       Parms[['eta_p']] = grid[i,1]
       Parms[['markup']] = grid[i,2]
       Parms[['gamma']] = grid[i,3]
-      
-      # Transform variables:
-      Options <- list(
-        transform_vars  = trnsfm
-      )
       
       # run simulation
       Sim <- try(simulation_red(time  = Time,
@@ -89,62 +85,54 @@ explore.parm.space <- function(n_pts, type, trnsfm = FALSE,
                             parms   = Parms,
                             method = 'lsoda'))
       
-      # if the simulation encounters an error, record this and keep going:
-      if (inherits(Sim,"try-error")){
-        outcome[i] = 'error'
-      } else if (is.na(tail(Sim$lambda, 1)) == TRUE){
-        outcome[i] = 'error'
+      # record result for all stopping points and price params
+      result[[i]] <- as_tibble(Sim) %>% 
+        filter(year %in% stopping_points) %>% 
+        mutate(eta = Parms[['eta_p']],
+               markup = Parms[['markup']],
+               gamma = Parms[['gamma']])
       }
-      else{
-        # categorize as good / bad / error
-        if ((0.4 <= tail(Sim$omega,1)) & (1 > tail(Sim$omega,1)) &
-            (0.4 <= tail(Sim$lambda,1)) & (1 > tail(Sim$lambda,1)) &
-            (2.7 >= tail(Sim$debt_share,1))){
-          outcome[i] = 'good'
-        } else if ((tail(Sim$omega,1) > 1) | (tail(Sim$lambda,1) > 1)){
-          outcome[i] = 'outside_bounds'
-        } else{
-          outcome[i] = 'bad'
-        }}}
-    cputime.end <- proc.time() # end timer
-    cputime <- cputime.end - cputime.start
-    # Result saved in data frame with parameters
-    result <- data.frame(grid,outcome)
-    colnames(result) <- c("eta", "markup", "gamma", "outcome")
     # Save results
-    save(result, cputime, file=savefile)
-  } else { 
+    save(result, file=savefile)
+    } else { 
     # read in the data 
     load(savefile)
-  }
-  
-  print(result)
-  if (plot.res == TRUE){
-    par(mfrow = c(1,1), las=1, xpd=T)
-    colors <- c("#D95F02", "#1B9E77","#7570B3",'red')
-    colors <- colors[as.numeric(result$outcome)]
-    scatterplot3d(result[,1:3], pch = 16, color=colors,
-                  main="Parameter grid search", xlab = '',
-                  ylab = '', zlab = '')
-    legend(x=0, y=-1, legend = levels(result$outcome),
-           col = c("#D95F02", "#1B9E77","#7570B3",'red'), pch = 16,
-           inset = -0.25, xpd = TRUE, horiz = TRUE)
-    text(x = 7, y = 0.2, expression(xi), srt = 45)
-    text(x = -0.8, y = 2.7, expression(gamma), srt = 0)
-    text(x = 2.5, y = -1, expression(eta), srt = 0)
-  }
-  
+      }
   return(result)
+  }
+
+#-----------------------------------------------------------------------------
+# function to unpack list into a tibble
+# there is probably a way to find this with purr but I didn't find it
+##' @param res output of compute.basin.reduced
+##' @return res reshaped into a single tibble
+flatten.result <- function(res){
+  out <- res[[1]]
+  for (i in 2:length(res)){
+    out <- rbind(out,res[[i]])
+  }
+  return(out)
 }
 
-#------------------------------------------------------------------------------
-# Interactive plot
+# function to categorize result
+##' @param res flattened output of compute.basin.reduced (single tibble with all years)
+##' @return res with an additional variable 'outcome' containing categorized result
+##' NOTE: if outcome is 'not assigned' this should be investigated
+categorize.result <- function(res){
+  result_categorized <- res %>%
+    mutate(outcome = 'not assigned') %>% 
+    mutate(outcome = ifelse((0.4 <= omega) & (1 > omega) & (0.4 <= lambda) &
+                              (1 > lambda) & (2.7 >= debt_share), "good",outcome)) %>% 
+    mutate(outcome = ifelse((omega > 1) | (lambda > 1), 'outside_bounds',outcome)) %>% 
+    mutate(outcome = ifelse((omega < 0.4) | (lambda < 0.4) | (debt_share > 2.7), 
+                            'bad', outcome)) 
+  return(result_categorized)
+}
+
 # function generates interactive 3d scatter plot based on a result array
+##' @param result tibble from categorize.result
 interactive.scatter <- function(result){
-  df <- result %>%
-    rownames_to_column() %>%
-    as_tibble() %>%
-    mutate(outcome = as.factor(outcome))
+  df <- result %>% mutate(outcome = as.factor(outcome))
   
   # Create the plot
   p <- plot_ly(
@@ -153,26 +141,36 @@ interactive.scatter <- function(result){
   ) %>%
     add_markers() %>%
     layout(
-      scene = list(xaxis = list(title = 'eta'),
-                   yaxis = list(title = 'markup'),
-                   zaxis = list(title = 'gamma'))
+      scene = list(xaxis = list(title = 'lambda'),
+                   yaxis = list(title = 'omega'),
+                   zaxis = list(title = 'd'))
     )
   return(p)
 }
 
+
 #------------------------------------------------------------------------------
 # RESULTS
-result1 <- explore.parm.space(n_pts=20, lambda_init = 0.9, omega_init=0.9,
-                              debt_init=0.3, type="sobol")
-result1$outcome[result1$outcome == 'outside_bounds']='error'
-interactive.scatter(result1)
+result1 <- explore.parm.space.3d(n_pts=20, lambda_init = 0.9, omega_init=0.9,
+                                 debt_init=0.3, type="sobol", end_time = 2300,
+                                 stopping_points = c(2100,2200,2300))
 
-result2 <- explore.parm.space(n_pts=20, lambda_init = 0.5, omega_init=0.6,
-                              debt_init=1, type="sobol")
-result2$outcome[result2$outcome == 'outside_bounds']='error'
-interactive.scatter(result2)
+result1 <- result1 %>% flatten.result() %>% categorize.result()
 
-result3 <- explore.parm.space(n_pts=20, lambda_init = 0.675, omega_init=0.578,
-                              debt_init=1.53, type="sobol")
-result3$outcome[result3$outcome == 'outside_bounds']='error'
-interactive.scatter(result3)
+# looking at good outcomes out of curiosity
+result1 %>% filter(outcome == "good", year == 2300) %>%
+  ggplot(aes(omega,lambda,colour=debt_share)) +
+  geom_point() + theme_bw()
+
+#interactive.scatter(result1)
+
+result2 <- explore.parm.space.3d(n_pts=20, lambda_init = 0.5, omega_init=0.6,
+                              debt_init=1, type="sobol", end_time = 2300,
+                              stopping_points = c(2100,2200,2300))
+
+result2 <- result2 %>% flatten.result() %>% categorize.result()
+
+# looking at good outcomes out of curiosity
+result2 %>% filter(outcome == "good", year == 2300) %>%
+  ggplot(aes(omega,lambda,colour=debt_share)) +
+  geom_point() + theme_bw()

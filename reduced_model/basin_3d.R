@@ -15,16 +15,6 @@ source('reduced_model/pars.R')    # load parameters
 source('reduced_model/funcs.R')   # load functions
 source('reduced_model/sim.R')     # load simulation file 
 
-# Set up simulation
-Time <- c(
-  start         =     2020, 
-  end           =     2100,
-  step          =     0.05
-)
-
-Options <- list(
-  transform_vars  = FALSE  
-)
 #------------------------------------------------------------------------------
 # function creates grid of initial conditions
 create.ic.grid <- function(n_pts=20, type = 'grid'){
@@ -48,19 +38,27 @@ create.ic.grid <- function(n_pts=20, type = 'grid'){
 }
 
 #------------------------------------------------------------------------------
-# function computes basin of attraction for 3d model for a given number of points. 
-# params eta, markup, and gamma can be specified
+# main function for basin of attraction
+##' @param n_pts number of points to run per dimension. Total runs is n_pts^3
+##' @param end_time when to end the simulation
+##' @param stopping_points vector of times to report results (should include end_time)
+##' @param eta value of eta (fixed in all runs)
+##' @param markup value of markup (fixed in all runs)
+##' @param gamma value of gamma (fixed in all runs)
 compute.basin.reduced <- function(n_pts, eta=0.192, markup = 1.18,
-                             gamma=0.9, type='sobol', plot.res = TRUE){
+                             gamma=0.9, end_time = 2500,
+                             stopping_points = c(2100,2300,2500),
+                             type='sobol'){
   # name file to save data:
-  savefile <- sprintf("reduced_model/basin_res/npts_%g_type_%s_eta_%g_mark_%g_gam_%g.Rdata",
-                      n_pts, type, eta, markup, gamma)
+  savefile <- sprintf("reduced_model/basin_res/npts_%g_type_%s_eta_%g_mark_%g_gam_%g_end_%g.Rdata",
+                      n_pts, type, eta, markup, gamma, end_time)
   if (!file.exists(savefile)) {
     # set-up grid
     grid <- create.ic.grid(n_pts = n_pts, type = type)
-    outcome <- rep(NA, nrow(grid))
-    cputime.start <- proc.time() # start timer
-    
+
+    # list to save the results
+    result <- vector("list",nrow(grid))
+
     # set parameters
     Parms[['eta_p']] = eta
     Parms[['markup']] = markup
@@ -68,8 +66,7 @@ compute.basin.reduced <- function(n_pts, eta=0.192, markup = 1.18,
     
     # for loop
     for (i in seq(1,nrow(grid))){
-      
-      cat(i, 'out of', nrow(grid), '\n')
+      #cat(i, 'out of', nrow(grid), '\n')
       
       # Set initial conditions 
       IC <- c(
@@ -79,67 +76,76 @@ compute.basin.reduced <- function(n_pts, eta=0.192, markup = 1.18,
         pop    = 4.83
       )
       
+      # Set up simulation
+      Time <- c(
+        start         =     2016, 
+        end           =     end_time,
+        step          =     0.05
+      )
+      
+      Options <- list(
+        transform_vars  = FALSE  
+      )
       
       # Run simulation
       Sim <- try(simulation_red(time = Time,
                                init_state = IC,
                                parms      = Parms,
-                               #options    = Options,
+                               options    = Options,
                                method     = 'lsoda'))
-      tsim <- tail(Sim,1)
-      # if the simulation encounters an error, record this and keep going:
-      if (inherits(Sim,"try-error") || is.na(tail(Sim$lambda, 1))) {
-        outcome[i] = 'error'
-      } else{
-        # categorize as good / bad / error
-        if ((0.4 <= tail(Sim$omega,1)) && (1 > tail(Sim$omega,1)) &&
-            (0.4 <= tail(Sim$lambda,1)) && (1 > tail(Sim$lambda,1)) &&
-            #(0.1 <= tail(Sim$debt_share,1)) & 
-            (2.7 >= tail(Sim$debt_share,1))){
-          outcome[i] = 'good'
-        } else if ((tail(Sim$omega,1) > 1) | (tail(Sim$lambda,1) > 1)){
-          outcome[i] = 'outside_bounds'
-        } else{
-          outcome[i] = 'bad'
-        }}}
-    cputime.end <- proc.time() # end timer
-    cputime <- cputime.end - cputime.start
-    cat('Time in min:',cputime/60)
-    # Result saved in data frame with parameters
-    result <- data.frame(grid,outcome)
-    colnames(result) <- c("lambda", "omega", "debt", "outcome")
+      
+      # record result for all stopping points and original IC
+      result[[i]] <- as_tibble(Sim) %>% 
+        filter(year %in% stopping_points) %>% 
+        mutate(lambda.ic = IC[['lambda']],
+               omega.ic = IC[['omega']],
+               debt.ic = IC[['debt']])
+      }
     # Save results
-    save(result, cputime, file=savefile)
+    save(result, file=savefile)
   } else { 
     # read in the data 
     load(savefile)
-  }
-  if (plot.res){
-    par(mfrow = c(1,1), las=1, xpd=TRUE)
-    colors <- c("#D95F02", "#1B9E77","#7570B3",'red')
-    colors <- colors[as.numeric(result$outcome)]
-    scatterplot3d(result[,1:3], pch = 16, color=colors,
-                  main="Basin of attraction", xlab = 'lambda',
-                  ylab = 'omega', zlab = 'debt')
-    legend(x=0, y=-1, legend = levels(result$outcome),
-           col = c("#D95F02", "#1B9E77","#7570B3",'red'), pch = 16,
-           inset = -0.25, xpd = TRUE, horiz = TRUE)
   }
   return(result)
 }
 
 #------------------------------------------------------------------------------
-# Interactive plot
+# function to unpack list into a tibble
+# there is probably a way to find this with purr but I didn't find it
+##' @param res output of compute.basin.reduced
+##' @return res reshaped into a single tibble
+flatten.result <- function(res){
+  out <- res[[1]]
+  for (i in 2:length(res)){
+    out <- rbind(out,res[[i]])
+  }
+  return(out)
+}
+
+# function to categorize result
+##' @param res flattened output of compute.basin.reduced (single tibble with all years)
+##' @return res with an additional variable 'outcome' containing categorized result
+##' NOTE: if outcome is 'not assigned' this should be investigated
+categorize.result <- function(res){
+  result_categorized <- res %>%
+    mutate(outcome = 'not assigned') %>% 
+    mutate(outcome = ifelse((0.4 <= omega) & (1 > omega) & (0.4 <= lambda) &
+                              (1 > lambda) & (2.7 >= debt_share), "good",outcome)) %>% 
+    mutate(outcome = ifelse((omega > 1) | (lambda > 1), 'outside_bounds',outcome)) %>% 
+    mutate(outcome = ifelse((omega < 0.4) | (lambda < 0.4) | (debt_share > 2.7), 
+                            'bad', outcome)) 
+  return(result_categorized)
+}
+
 # function generates interactive 3d scatter plot based on a result array
+##' @param result tibble from categorize.result
 interactive.scatter <- function(result){
-  df <- result %>%
-    rownames_to_column() %>%
-    as_tibble() %>%  ## as_data_frame() deprecated tibble 2.0
-    mutate(outcome = as.factor(outcome))
+  df <- result %>% mutate(outcome = as.factor(outcome))
   
   # Create the plot
   p <- plot_ly(
-    df, x = ~lambda, y = ~omega, z = ~debt, size = 5,
+    df, x = ~lambda.ic, y = ~omega.ic, z = ~debt.ic, size = 5,
     color = ~outcome, colors = c("#D95F02","#7570B3","#1B9E77")
   ) %>%
     add_markers() %>%
@@ -152,165 +158,61 @@ interactive.scatter <- function(result){
 }
 
 #------------------------------------------------------------------------------
-# PLOTS
-result_3d1 <- compute.basin.reduced(n_pts=20, markup=1.18, plot.res = FALSE)
-result_3d1$outcome[result_3d1$outcome == 'outside_bounds']='error'
-interactive.scatter(result_3d1)
+# RESULTS
+result_3d1 <- compute.basin.reduced(n_pts=20, markup=1.18, end_time = 2500,
+                                    stopping_points = c(2100,2300,2500))
 
-result_3d2 <- compute.basin.reduced(n_pts=20, markup=1.3, plot.res = FALSE)
-result_3d2$outcome[result_3d2$outcome == 'outside_bounds']='error'
-interactive.scatter(result_3d2)
+result1 <- result_3d1 %>% flatten.result() %>% categorize.result()
 
-result_3d3 <- compute.basin.reduced(n_pts=20, markup=1.875, plot.res = FALSE)
-result_3d3$outcome[result_3d3$outcome == 'outside_bounds']='error'
-interactive.scatter(result_3d3)
+# Find equilibrium
+result1 %>% filter(outcome == "good", year == 2500) %>%
+  ggplot(aes(omega,lambda,colour=debt_share)) +
+  geom_point() + theme_bw()
+# appears to be approaching a single equilibrium
 
-###' @param x a 3-column coordinate matrix
-###' @param color colour of 3D hull/points
-###' @param alpha transparency (0-1)
-###' @param do_points plot separate points rather than hull, e.g. for small/disconnected sets
-pfun <- function(x, color, alpha, do_points=FALSE, pointsize=NA) {
-    ## cat(color,alpha,"\n")
-    if (do_points) {
-        rgl::points3d(x[,1],x[,2],x[,3],color=color, alpha=alpha,
-                      size=pointsize)
-    } else {
-        gMOIP::plotHull3D(x, drawLines=FALSE,
-                          argsPolygon3d=list(color=color,
-                                             alpha=alpha))
-    }
-}
+# compute equilibrium using median
+equilibrium1 <- result1 %>% filter(outcome == "good", year == 2500) %>% 
+  dplyr::summarise(lambda.eq = median(lambda),
+                    omega.eq = median(omega),
+                    debt.eq = median(debt_share))
 
-## define colours/alpha so we can match legend to hull3d() defaults
-c0 <- c("orange","purple","green")
-a0 <- c(0.1,0.3,0.3)
+# plot output
+#interactive.scatter(result1)
 
-###' @param x data frame/tibble with lambda, omega, d, outcome
-###' @param colvec
-###' @param alphavec
-###' @param do_points
-hull3d <- function(x, colvec=c("orange","purple","green"),
-                   alphavec=c(0.1,0.3,0.3),
-                   do_points=rep(FALSE, 3),
-                   ...) {
-    m1 <- x %>% split(.$outcome) %>% map(~as.matrix(.[,1:3]))
-    pmap(c(list(m1,colvec,alphavec, do_points), list(...)),  pfun)
-    rgl::bbox3d()
-    rgl::axes3d()
-    invisible(NULL)
-}
 
-## parallel color/alpha adjustment
-set_alpha <- function(colvec, alphavec) {
-    purrr::map2_chr(colvec, alphavec, ~adjustcolor(col=.x, alpha.f=.y))
-}
-set_alpha(c0,a0)
+#----
+result_3d2 <- compute.basin.reduced(n_pts=20, markup=1.3, end_time = 2500,
+                                    stopping_points = c(2100,2300,2500))
 
-interactive.scatter(result_3d1)
+result2 <- result_3d2 %>% flatten.result() %>% categorize.result()
 
-## could also save this to an external (text or RDS?) file
-p3dsave <- list(zoom = 0.907029569149017, userProjection = structure(c(1, 
-0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1), .Dim = c(4L, 4L
-)), userMatrix = structure(c(0.811060905456543, 0.227074816823006, 
--0.539089322090149, 0, -0.584931075572968, 0.305393934249878, 
--0.751392066478729, 0, -0.00598765164613724, 0.924754917621613, 
-0.38051626086235, 0, 0, 0, 0, 1), .Dim = c(4L, 4L)), scale = c(2.06813907623291, 
-2.06813907623291, 0.628396093845367), FOV = 30)
+# Find equilibrium
+result2 %>% filter(outcome == "good", year == 2500) %>%
+  ggplot(aes(omega,lambda,colour=debt_share)) +
+  geom_point() + theme_bw()
+# appears to be approaching a single equilibrium
 
-## FIXME: wrap all of this into an appropriate function
-## with arguments that let us do plots more easily
-open3d()
-## set up big window (actual pixel sizes matter for rendering!)
-par3d(windowRect = c(0, 0, 1000, 1000))
-## make 'reflective' component black (could try gray?)
-material3d(specular="black")  ## tried lit=FALSE but don't like it
-# plot the convex hull(s) (and/or points)
-hull3d(result_3d1, do_points=list(FALSE,TRUE,FALSE),
-       pointsize=7)
-aspect3d(1,1,1)  ## reset to equal aspect ratio (seems like a good idea)
-## restore saved projection info
-if (exists("p3dsave")) par3d(p3dsave)
+# compute equilibrium using median
+equilibrium2 <- result2 %>% filter(outcome == "good", year == 2500) %>% 
+  dplyr::summarise(lambda.eq = median(lambda),
+                    omega.eq = median(omega),
+                    debt.eq = median(debt_share))
 
-# change axes, add legend
-## axis3d('x', pos = c(NA, 0, 0))
-## https://stackoverflow.com/questions/29988230/using-expression-in-r-rgl-axis-labels
-## Greek letter reference http://www.alanwood.net/demos/symbol.html#s0370
-## ?? expression() seemed to be working until I messed around with
-##  some other graphics settings ...
-if (FALSE) {
-    title3d(xlab=intToUtf8(955), ## expression(paste(lambda)),
-            ylab=intToUtf8(969), ## expression(omega),
-            zlab= 'd',
-            line=1,
-            cex=2)
-}
-## title3d isn't flexible enough.
-## use it interactively to figure out which axes are which,
-## then assign edges manually
-## may want to make "which edges" arguments to a plotting fn
-mtext3d(edge="x++",text=intToUtf8(955),line=2,cex=2)
-mtext3d(edge="y--",text=intToUtf8(969),line=2,cex=2)
-mtext3d(edge="z-+",text="d",line=2,cex=2)
-legend3d("topright", legend = c('bad', 'error', 'good'), pch = 16,
-         col = set_alpha(c0,a0),
-         cex=2, inset=c(0.02))
+#----
+result_3d3 <- compute.basin.reduced(n_pts=20, markup=1.3, end_time = 2500,
+                                    stopping_points = c(2100,2300,2500))
 
-## rotate/zoom until you're happy, then capture perspective info;
-## then save/restore it above
-if (FALSE) {
-    p3dsave <- par3d()[c("zoom","userProjection","userMatrix","scale","FOV")]
-    dput(p3dsave)
-}
+result3 <- result_3d3 %>% flatten.result() %>% categorize.result()
 
-close3d()
+# Find equilibrium
+result3 %>% filter(outcome == "good", year == 2500) %>%
+  ggplot(aes(omega,lambda,colour=debt_share)) +
+  geom_point() + theme_bw()
+# appears to be approaching a single equilibrium
 
-#----------------------------------------------------------------------
+# compute equilibrium using median
+equilibrium3 <- result3 %>% filter(outcome == "good", year == 2500) %>% 
+  dplyr::summarise(lambda.eq = median(lambda),
+                   omega.eq = median(omega),
+                   debt.eq = median(debt_share))
 
-###' @param x data frame/tibble with lambda, omega, d, outcome
-###' @param colvec 
-###' @param alphavec
-###' @param do_points
-###' @param save_image T/F save image as png in reduced_model/basin_res
-convex_hull_plot <- function(x, markup, colvec=c("orange","purple","green"),
-                   alphavec=c(0.3,0.3,0.3),
-                   do_points=rep(FALSE, 3),
-                   save_image = TRUE,
-                   ...) {
-  ## parallel color/alpha adjustment
-  set_alpha <- function(colvec, alphavec) {
-    purrr::map2_chr(colvec, alphavec, ~adjustcolor(col=.x, alpha.f=.y))
-  }
-  open3d()
-  ## set up big window (actual pixel sizes matter for rendering!)
-  par3d(windowRect = c(0, 0, 1000, 1000))
-  ## make 'reflective' component black (could try gray?)
-  material3d(specular="black")  ## tried lit=FALSE but don't like it
-  # plot the convex hull(s) (and/or points)
-  hull3d(x,colvec = colvec, alphavec = alphavec,
-         do_points = do_points, pointsize=7)
-  aspect3d(1,1,1)  ## reset to equal aspect ratio (seems like a good idea)
-  ## restore saved projection info
-  if (exists("p3dsave")) par3d(p3dsave)
-  # axes labels
-  mtext3d(edge="x++",text=expression(lambda),line=2,cex=2)
-  mtext3d(edge="y--",text=expression(omega),line=2,cex=2)
-  # # if expression() doesn't work:
-  # mtext3d(edge="x++",text=intToUtf8(955),line=2,cex=2)
-  # mtext3d(edge="y--",text=intToUtf8(969),line=2,cex=2)
-  mtext3d(edge="z-+",text="d",line=2,cex=2)
-
-  par3d(windowRect = c(100, 150, 800, 850))
-  if (save_image){
-    filename <- sprintf("markup_%g",markup) %>% 
-      str_replace("[.]","_") %>% paste0(".png")
-    rgl.snapshot(here("reduced_model/basin_res",filename))
-  }
-  close3d()
-}
-
-convex_hull_plot(result_3d1, markup = 1.18,do_points=list(FALSE,TRUE,FALSE),
-                 save_image = FALSE)
-convex_hull_plot(result_3d2, markup = 1.3, do_points=list(FALSE,TRUE,FALSE),
-                 save_image = FALSE)
-convex_hull_plot(result_3d3, markup = 1.875, do_points=list(FALSE,TRUE,FALSE),
-                 save_image = FALSE)
