@@ -88,6 +88,7 @@ F_exo_vec <- function(t, pars) {
 dam_curve <- function(Temp, pars, options) {
   switch(options$damage_scenario,
          'None' = 0 * Temp,
+         'Nordhaus' = 1 - 1/(1 + pars[['dam_2']] * Temp^2),
          '10at4' = 1 - 1/(1 + pars[['dam_2']] * Temp^2 + pars[['dam_ten']] * Temp^pars[['dam_exp']]),
          '20at4' = 1 - 1/(1 + pars[['dam_2']] * Temp^2 + pars[['dam_twenty']] * Temp^pars[['dam_exp']]),
          '30at4' = 1 - 1/(1 + pars[['dam_2']] * Temp^2 + pars[['dam_thirty']] * Temp^pars[['dam_exp']]),

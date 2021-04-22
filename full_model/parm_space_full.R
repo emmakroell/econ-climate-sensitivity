@@ -46,13 +46,13 @@ create.parm.grid <- function(n_pts=20, type = 'sobol'){
 }
 
 #================================================================================
-explore.parm.space <- function(n_pts, type, end_time = 2300,
+explore.parm.space <- function(n_pts, type, end_time = 2300, dam = "10at4",
                                stopping_points = c(2100,2200,2300),
                                lambda_init=0.9, omega_init=0.9,
                                debt_init = 0.3){
   # name file to save data:
-  savefile <- sprintf("full_model/parms_res/npts_%g_type_%s_lambs_%g_omg_%g_d_%g_end%g.Rdata",
-                      n_pts, type, lambda_init, omega_init, debt_init, end_time)
+  savefile <- sprintf("full_model/parms_res/npts_%g_type_%s_lambs_%g_omg_%g_d_%g_dam_%s_end%g.Rdata",
+                      n_pts, type, lambda_init, omega_init, debt_init, dam, end_time)
   if (!file.exists(savefile)) {
     # Set initial conditions 
     lambda_init <-lambda_init
@@ -89,7 +89,7 @@ explore.parm.space <- function(n_pts, type, end_time = 2300,
     
     Options <- list(
       invest = 'lin', 
-      damage_scenario = '10at4',
+      damage_scenario = dam,
       subsidy = 0.5   # fraction of abatement costs subsidized by government
     )
     
@@ -100,7 +100,7 @@ explore.parm.space <- function(n_pts, type, end_time = 2300,
 
     # for loop
     for (i in seq(1,nrow(grid))){
-      cat(i, 'out of', nrow(grid), '\n')
+      #cat(i, 'out of', nrow(grid), '\n')
       
       Parms[['eta_p']] = grid[i,1]
       Parms[['markup']] = grid[i,2]
@@ -176,15 +176,48 @@ interactive.scatter <- function(result){
 
 #------------------------------------------------------------------------------
 # RESULTS
-result1 <- explore.parm.space(n_pts=20, lambda_init = 0.9, omega_init=0.9,
+result1 <- explore.parm.space(n_pts=5, lambda_init = 0.9, omega_init=0.9,
                               debt_init=0.3, type="sobol", end_time = 2300,
-                              stopping_points = c(2100,2200,2300))
+                              dam = "Nordhaus",stopping_points = c(2100,2200,2300))
 
 result1 <- result1 %>% flatten.result() %>% categorize.result()
+result1 %>% filter(year==2300, outcome == "good")
+result1 %>% filter(year==2300, outcome == "good") %>%
+  ggplot(aes(lambda,omega,colour=debt_share)) + geom_point() + theme_minimal()
 
-result2 <- explore.parm.space(n_pts=20, lambda_init = 0.5, omega_init=0.6,
-                              debt_init=1, type="sobol", end_time = 2160,
-                              stopping_points = c(2100,2160))
+result2 <- explore.parm.space(n_pts=5, lambda_init = 0.5, omega_init=0.6,
+                              debt_init=1, type="sobol", end_time = 2100,
+                              dam = "Nordhaus",stopping_points = c(2100,2200,2300))
 
 result2 <- result2 %>% flatten.result() %>% categorize.result()
+result2 %>% filter(year==2100, outcome == "good")
 
+result3 <- explore.parm.space(n_pts=5, lambda_init = 0.578, omega_init=0.675,
+                              dam = "Nordhaus", debt_init=1.53, type="sobol",
+                              end_time = 2100, stopping_points = c(2100,2200,2300))
+result3 <- result3 %>% flatten.result() %>% categorize.result()
+result3 %>% filter(year==2200, outcome == "good")
+
+#-------------
+
+result4 <- explore.parm.space(n_pts=20, lambda_init = 0.9, omega_init=0.9,
+                              debt_init=0.3, type="sobol", end_time = 2300,
+                              dam = "10at4",stopping_points = c(2100,2200,2300))
+
+result4 <- result4 %>% flatten.result() %>% categorize.result()
+result4 %>% filter(year==2300, outcome == "good")
+result4 %>% filter(year==2300, outcome == "good") %>%
+  ggplot(aes(lambda,omega,colour=debt_share)) + geom_point() + theme_minimal()
+
+result5 <- explore.parm.space(n_pts=20, lambda_init = 0.5, omega_init=0.6,
+                              debt_init=1, type="sobol", end_time = 2100,
+                              dam = "10at4",stopping_points = c(2100,2200,2300))
+
+result5 <- result5 %>% flatten.result() %>% categorize.result()
+result5 %>% filter(year==2100, outcome == "good")
+
+result6 <- explore.parm.space(n_pts=20, lambda_init = 0.578, omega_init=0.675,
+                              dam = "10at4", debt_init=1.53, type="sobol",
+                              end_time = 2100, stopping_points = c(2100,2200,2300))
+result6 <- result6 %>% flatten.result() %>% categorize.result()
+result6 %>% filter(year==2200, outcome == "good")

@@ -66,7 +66,7 @@ compute.basin.reduced <- function(n_pts, eta=0.192, markup = 1.18,
     
     # for loop
     for (i in seq(1,nrow(grid))){
-      #cat(i, 'out of', nrow(grid), '\n')
+      cat(i, 'out of', nrow(grid), '\n')
       
       # Set initial conditions 
       IC <- c(
@@ -199,7 +199,7 @@ equilibrium2 <- result2 %>% filter(outcome == "good", year == 2500) %>%
                     debt.eq = median(debt_share))
 
 #----
-result_3d3 <- compute.basin.reduced(n_pts=20, markup=1.3, end_time = 2500,
+result_3d3 <- compute.basin.reduced(n_pts=20, markup=1.875, end_time = 2500,
                                     stopping_points = c(2100,2300,2500))
 
 result3 <- result_3d3 %>% flatten.result() %>% categorize.result()

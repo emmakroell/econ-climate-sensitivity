@@ -74,7 +74,7 @@ explore.parm.space.3d <- function(n_pts, type, end_time = 2300,
     
     # for loop
     for (i in seq(1,nrow(grid))){
-      #cat(i, 'out of', nrow(grid), '\n')
+      cat(i, 'out of', nrow(grid), '\n')
       Parms[['eta_p']] = grid[i,1]
       Parms[['markup']] = grid[i,2]
       Parms[['gamma']] = grid[i,3]
@@ -83,6 +83,7 @@ explore.parm.space.3d <- function(n_pts, type, end_time = 2300,
       Sim <- try(simulation_red(time  = Time,
                             init_state  = IC,
                             parms   = Parms,
+                            options = Options,
                             method = 'lsoda'))
       
       # record result for all stopping points and price params

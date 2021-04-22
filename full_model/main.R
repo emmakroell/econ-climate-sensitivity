@@ -45,13 +45,13 @@ IC <- c(
 # Set up simulation
 Time <- c(
   start         =     2016, 
-  end           =     2100,
+  end           =     2500,
   step          =     0.05
 )
 
 Options <- list(
   invest = 'lin',  # exp / arctan / lin
-  damage_scenario = '10at4',
+  damage_scenario = 'Nordhaus',
   subsidy = 0.5   # fraction of abatement costs subsidized by government
 )
             
@@ -78,12 +78,12 @@ legend(x=2108, y=1.02, legend = c(expression(paste(lambda)),
        col=colourful, lty=1:1,box.lty=0, cex=0.75)
 
 
-plot(x = Sim$year, y = Sim$debt_share, type = 'l', col = 'purple',
-     xlab = '', ylab = '', main=expression(paste("Debt share (d)")))
-
-plot(x = Sim$year, y = Sim$i, type = 'l', col = 'purple',
-     xlab = '', ylab = '', main=expression(paste("Inflation (i))")))
-
-plot(x = Sim$year, y = Sim$p, type = 'l', col = 'purple',
-     xlab = '', ylab = '', main=expression(paste("Prices")))
+# plot(x = Sim$year, y = Sim$debt_share, type = 'l', col = 'purple',
+#      xlab = '', ylab = '', main=expression(paste("Debt share (d)")))
+# 
+# plot(x = Sim$year, y = Sim$i, type = 'l', col = 'purple',
+#      xlab = '', ylab = '', main=expression(paste("Inflation (i))")))
+# 
+# plot(x = Sim$year, y = Sim$p, type = 'l', col = 'purple',
+#      xlab = '', ylab = '', main=expression(paste("Prices")))
 
