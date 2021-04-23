@@ -14,7 +14,7 @@ source('full_model/funcs.R')    # load functions
 source('full_model/sim.R')      # load simulation file
 #==============================================================================
 # ### Set initial conditions
-lambda_init <-0.675
+lambda_init <- 0.675
 omega_init <-  0.578
 debt_share_init <-1.53
 Y <- 59.74
@@ -45,7 +45,7 @@ IC <- c(
 # Set up simulation
 Time <- c(
   start         =     2016, 
-  end           =     2500,
+  end           =     2100,
   step          =     0.05
 )
 
@@ -54,6 +54,7 @@ Options <- list(
   damage_scenario = 'Nordhaus',
   subsidy = 0.5   # fraction of abatement costs subsidized by government
 )
+
             
 
 #================================================================================

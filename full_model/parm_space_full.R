@@ -1,18 +1,10 @@
 #libraries
 library('here')
 library('deSolve')
-library('RColorBrewer')
 library('qrng')
-library('scatterplot3d')
 library('tidyverse')
-library('plotly')
-library('rgl')
-library('gMOIP')
+#library('plotly')
 
-# Colour palettes for graphs
-greens <- brewer.pal(n = 6, name = "Greens")
-colourful <- brewer.pal(n = 3, name = "Set1")
-colour2 <- brewer.pal(n = 3, name = "Set2")
 
 source('full_model/pars.R')     # load parameters
 source('full_model/funcs.R')    # load functions
@@ -176,48 +168,19 @@ interactive.scatter <- function(result){
 
 #------------------------------------------------------------------------------
 # RESULTS
-result1 <- explore.parm.space(n_pts=5, lambda_init = 0.9, omega_init=0.9,
+result1 <- explore.parm.space(n_pts=20, lambda_init = 0.9, omega_init=0.9,
                               debt_init=0.3, type="sobol", end_time = 2300,
                               dam = "Nordhaus",stopping_points = c(2100,2200,2300))
+# 
+# result1 <- result1 %>% flatten.result() %>% categorize.result()
+# result1 %>% filter(year==2300, outcome == "good")
+# result1 %>% filter(year==2300, outcome == "good") %>%
+#   ggplot(aes(lambda,omega,colour=debt_share)) + geom_point() + theme_minimal()
 
-result1 <- result1 %>% flatten.result() %>% categorize.result()
-result1 %>% filter(year==2300, outcome == "good")
-result1 %>% filter(year==2300, outcome == "good") %>%
-  ggplot(aes(lambda,omega,colour=debt_share)) + geom_point() + theme_minimal()
 
-result2 <- explore.parm.space(n_pts=5, lambda_init = 0.5, omega_init=0.6,
-                              debt_init=1, type="sobol", end_time = 2100,
-                              dam = "Nordhaus",stopping_points = c(2100,2200,2300))
-
-result2 <- result2 %>% flatten.result() %>% categorize.result()
-result2 %>% filter(year==2100, outcome == "good")
-
-result3 <- explore.parm.space(n_pts=5, lambda_init = 0.578, omega_init=0.675,
+result2 <- explore.parm.space(n_pts=20, lambda_init = 0.675, omega_init=0.578,
                               dam = "Nordhaus", debt_init=1.53, type="sobol",
-                              end_time = 2100, stopping_points = c(2100,2200,2300))
-result3 <- result3 %>% flatten.result() %>% categorize.result()
-result3 %>% filter(year==2200, outcome == "good")
+                              end_time = 2300, stopping_points = c(2100,2200,2300))
+# result2 <- result2 %>% flatten.result() %>% categorize.result()
+# result2 %>% filter(year==2300, outcome == "good")
 
-#-------------
-
-result4 <- explore.parm.space(n_pts=20, lambda_init = 0.9, omega_init=0.9,
-                              debt_init=0.3, type="sobol", end_time = 2300,
-                              dam = "10at4",stopping_points = c(2100,2200,2300))
-
-result4 <- result4 %>% flatten.result() %>% categorize.result()
-result4 %>% filter(year==2300, outcome == "good")
-result4 %>% filter(year==2300, outcome == "good") %>%
-  ggplot(aes(lambda,omega,colour=debt_share)) + geom_point() + theme_minimal()
-
-result5 <- explore.parm.space(n_pts=20, lambda_init = 0.5, omega_init=0.6,
-                              debt_init=1, type="sobol", end_time = 2100,
-                              dam = "10at4",stopping_points = c(2100,2200,2300))
-
-result5 <- result5 %>% flatten.result() %>% categorize.result()
-result5 %>% filter(year==2100, outcome == "good")
-
-result6 <- explore.parm.space(n_pts=20, lambda_init = 0.578, omega_init=0.675,
-                              dam = "10at4", debt_init=1.53, type="sobol",
-                              end_time = 2100, stopping_points = c(2100,2200,2300))
-result6 <- result6 %>% flatten.result() %>% categorize.result()
-result6 %>% filter(year==2200, outcome == "good")

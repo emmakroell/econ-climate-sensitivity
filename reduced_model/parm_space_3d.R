@@ -1,16 +1,13 @@
 library('here')
 library('deSolve')
-library('RColorBrewer')
 library('qrng')
-library('scatterplot3d')
 library('tidyverse')
-library('plotly')
-library('rgl')
-library('gMOIP')
+#library('plotly')
 
 source('reduced_model/pars.R')   # load parameters
-source('reduced_model/sim.R')    # load simulation file
 source('reduced_model/funcs.R')  # load functions
+source('reduced_model/sim.R')    # load simulation file
+
 #================================================================================
 create.parm.grid <- function(n_pts=20, type = 'sobol'){
   if (type == 'grid'){
@@ -74,7 +71,7 @@ explore.parm.space.3d <- function(n_pts, type, end_time = 2300,
     
     # for loop
     for (i in seq(1,nrow(grid))){
-      cat(i, 'out of', nrow(grid), '\n')
+      #cat(i, 'out of', nrow(grid), '\n')
       Parms[['eta_p']] = grid[i,1]
       Parms[['markup']] = grid[i,2]
       Parms[['gamma']] = grid[i,3]
@@ -156,22 +153,22 @@ result1 <- explore.parm.space.3d(n_pts=20, lambda_init = 0.9, omega_init=0.9,
                                  debt_init=0.3, type="sobol", end_time = 2300,
                                  stopping_points = c(2100,2200,2300))
 
-result1 <- result1 %>% flatten.result() %>% categorize.result()
-
-# looking at good outcomes out of curiosity
-result1 %>% filter(outcome == "good", year == 2300) %>%
-  ggplot(aes(omega,lambda,colour=debt_share)) +
-  geom_point() + theme_bw()
+# result1 <- result1 %>% flatten.result() %>% categorize.result()
+# 
+# # looking at good outcomes out of curiosity
+# result1 %>% filter(outcome == "good", year == 2300) %>%
+#   ggplot(aes(omega,lambda,colour=debt_share)) +
+#   geom_point() + theme_bw()
 
 #interactive.scatter(result1)
 
-result2 <- explore.parm.space.3d(n_pts=20, lambda_init = 0.5, omega_init=0.6,
-                              debt_init=1, type="sobol", end_time = 2300,
+result2 <- explore.parm.space.3d(n_pts=20, lambda_init = 0.675, omega_init=0.578,
+                              debt_init=1.53, type="sobol", end_time = 2300,
                               stopping_points = c(2100,2200,2300))
 
-result2 <- result2 %>% flatten.result() %>% categorize.result()
-
-# looking at good outcomes out of curiosity
-result2 %>% filter(outcome == "good", year == 2300) %>%
-  ggplot(aes(omega,lambda,colour=debt_share)) +
-  geom_point() + theme_bw()
+# result2 <- result2 %>% flatten.result() %>% categorize.result()
+# 
+# # looking at good outcomes out of curiosity
+# result2 %>% filter(outcome == "good", year == 2300) %>%
+#   ggplot(aes(omega,lambda,colour=debt_share)) +
+#   geom_point() + theme_bw()
