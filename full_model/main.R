@@ -52,10 +52,10 @@ Time <- c(
 Options <- list(
   invest = 'lin',  # exp / arctan / lin
   damage_scenario = 'Nordhaus',
+  p_carb_scheme = "Stern-Stiglitz",
   subsidy = 0.5   # fraction of abatement costs subsidized by government
 )
 
-            
 
 #================================================================================
 Sim <- simulation(time       = Time,
@@ -64,27 +64,11 @@ Sim <- simulation(time       = Time,
                   options    = Options,
                   method     = 'lsoda')
 
-
-par(mfrow = c(1,1), las=1, xpd=T)
-plot(x = Sim$year, y = Sim$lambda, type = 'l',
-     col = colourful[1], xlab = '', ylab = '', ylim = c(-0.1,1),
-     main=expression(paste("Key economic variables")))
-lines(x = Sim$year, y = Sim$omega, type = 'l',
-      col = colourful[2])
-lines(x = Sim$year, y = Sim$profit_share, type = 'l',
-      col = colourful[3])
-legend(x=2108, y=1.02, legend = c(expression(paste(lambda)),
-                                  expression(paste(omega)),
-                                  expression(paste(pi))),
-       col=colourful, lty=1:1,box.lty=0, cex=0.75)
-
-
-# plot(x = Sim$year, y = Sim$debt_share, type = 'l', col = 'purple',
-#      xlab = '', ylab = '', main=expression(paste("Debt share (d)")))
-# 
-# plot(x = Sim$year, y = Sim$i, type = 'l', col = 'purple',
-#      xlab = '', ylab = '', main=expression(paste("Inflation (i))")))
-# 
-# plot(x = Sim$year, y = Sim$p, type = 'l', col = 'purple',
-#      xlab = '', ylab = '', main=expression(paste("Prices")))
+as_tibble(Sim) %>% mutate(Y = K / 2.7) %>% 
+  select(year, Y, debt_share, lambda, p_Car, E, Temp) %>% 
+  pivot_longer(cols = Y:Temp, names_to = 'variable', values_to = 'value') %>% 
+  mutate(variable = factor(variable, levels = c("Y", "debt_share", "lambda", "p_Car", "E", "Temp"))) %>% 
+  ggplot(aes(year,value,colour = variable)) + geom_line(size=1.1) +
+  facet_wrap(~variable, scale = "free") + theme_bw()
+ggsave("plot.png",height = 5, width =7)
 

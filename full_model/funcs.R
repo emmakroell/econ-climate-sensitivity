@@ -103,71 +103,22 @@ carbon_price <- function(p_Car,pars,options,time,state){
   if(p_Car >= state[['p_BS']]) {
     p_Car = state[['p_BS']]
   }
-  # set emissions reduction rate
-  n <- min((p_Car / ((1 - options$subsidy) * state[['p_BS']]))^
-             (1 / (pars[['theta_2']] - 1)), 1)
-  # Low carbon pricing scheme:
-  if (options$p_carb_scheme == 'Low'){
+  
+  # Stern-Stiglitz carbon pricing scheme:
+  if (options$p_carb_scheme == 'Stern-Stiglitz'){
     if (state[['counter']] <= (pars[['p_Car_step_year_1']] - time[['start']])) {
-      d_p_Car <- (pars[['p_Car_L_val_1']] - pars[['p_Car_start']]) /
+      d_p_Car <- (pars[['p_Car_val_1']] - pars[['p_Car_start']]) /
         (pars[['p_Car_step_year_1']] - time[['start']])
-    } else if (state[['counter']] <= (pars[['p_Car_step_year_2']] - pars[['p_Car_step_year_1']])){
-      d_p_Car  <- (pars[['p_Car_L_val_2']] - pars[['p_Car_L_val_1']]) /
-        (pars[['p_Car_step_year_2']] - pars[['p_Car_step_year_1']])
     } else {
-      d_p_Car <- (pars[['p_Car_L_val_3']] - pars[['p_Car_L_val_2']]) /
-        (time[['end']] - pars[['p_Car_step_year_2']])
-    }
-    
-    # Medium carbon pricing scheme:
-  } else if (options$p_carb_scheme == 'Medium'){
-    if (state[['counter']] <= (pars[['p_Car_step_year_1']] - time[['start']])) {
-      d_p_Car    <- (pars[['p_Car_M_val_1']] - pars[['p_Car_start']]) /
-        (pars[['p_Car_step_year_1']] - time[['start']])
-    } else if (state[['counter']] <= (pars[['p_Car_step_year_2']] - pars[['p_Car_step_year_1']])){
-      d_p_Car  <- (pars[['p_Car_M_val_2']] - pars[['p_Car_M_val_1']]) /
+      d_p_Car  <- (pars[['p_Car_val_2']] - pars[['p_Car_val_1']]) /
         (pars[['p_Car_step_year_2']] - pars[['p_Car_step_year_1']])
-    } else {
-      d_p_Car <- (pars[['p_Car_M_val_3']] - pars[['p_Car_M_val_2']]) /
-        (time[['end']] - pars[['p_Car_step_year_2']])
-    }
-    
-    # High carbon pricing scheme:
-  }  else if (options$p_carb_scheme == 'High'){
-    if (state[['counter']] <= (pars[['p_Car_step_year_1']] - time[['start']])) {
-      d_p_Car    <- (pars[['p_Car_H_val_1']] - pars[['p_Car_start']]) /
-        (pars[['p_Car_step_year_1']] - time[['start']])
-    } else if (state[['counter']] <= (pars[['p_Car_step_year_2']] - pars[['p_Car_step_year_1']])){
-      d_p_Car  <- (pars[['p_Car_H_val_2']] - pars[['p_Car_H_val_1']]) /
-        (pars[['p_Car_step_year_2']] - pars[['p_Car_step_year_1']])
-    } else {
-      d_p_Car <- (pars[['p_Car_H_val_3']] - pars[['p_Car_H_val_2']]) /
-        (time[['end']] - pars[['p_Car_step_year_2']])
-    } 
-    
-    # Canadian federal backstop carbon pricing scheme
-  } else if (options$p_carb_scheme == 'Canada'){
-    if (state[['counter']] <= (pars[['p_Car_step_year_1']] - time[['start']])) {
-      d_p_Car    <- (pars[['p_Car_C_val_1']] - pars[['p_Car_start']]) /
-        (pars[['p_Car_step_year_1']] - time['start'])
-    } else if (state[['counter']] <= (pars[['p_Car_step_year_2']] - pars[['p_Car_step_year_1']])){
-      d_p_Car  <- (pars[['p_Car_C_val_2']] - pars[['p_Car_C_val_1']]) /
-        (pars[['p_Car_step_year_2']] - pars[['p_Car_step_year_1']])
-    } else {
-      d_p_Car <- (pars[['p_Car_C_val_3']] - pars[['p_Car_C_val_2']]) /
-        (time[['end']] - pars[['p_Car_step_year_2']])
     }
     
     # No carbon pricing
   }  else if (options$p_carb_scheme == 'None'){
     d_p_Car   <- pars[['g_p_BS']] * p_Car
   }
-  # return emissions reduction rate and carbon pricing gradient
-  res <- data.frame(
-    n = n,
-    d_p_Car = d_p_Car
-  )
-  return(res)
+  return(d_p_Car)
 }
 
 # need a list of functions for parallel computing:

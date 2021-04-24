@@ -82,6 +82,7 @@ explore.parm.space <- function(n_pts, type, end_time = 2300, dam = "10at4",
     Options <- list(
       invest = 'lin', 
       damage_scenario = dam,
+      p_carb_scheme = "Stern-Stiglitz",
       subsidy = 0.5   # fraction of abatement costs subsidized by government
     )
     
@@ -171,16 +172,14 @@ interactive.scatter <- function(result){
 result1 <- explore.parm.space(n_pts=20, lambda_init = 0.9, omega_init=0.9,
                               debt_init=0.3, type="sobol", end_time = 2300,
                               dam = "Nordhaus",stopping_points = c(2100,2200,2300))
-# 
+
 # result1 <- result1 %>% flatten.result() %>% categorize.result()
 # result1 %>% filter(year==2300, outcome == "good")
-# result1 %>% filter(year==2300, outcome == "good") %>%
-#   ggplot(aes(lambda,omega,colour=debt_share)) + geom_point() + theme_minimal()
-
 
 result2 <- explore.parm.space(n_pts=20, lambda_init = 0.675, omega_init=0.578,
                               dam = "Nordhaus", debt_init=1.53, type="sobol",
                               end_time = 2300, stopping_points = c(2100,2200,2300))
+
 # result2 <- result2 %>% flatten.result() %>% categorize.result()
 # result2 %>% filter(year==2300, outcome == "good")
 

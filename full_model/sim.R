@@ -59,40 +59,40 @@ simulation <- function(time, init_state, parms, options = options,
     with(as.list(c(parms,state)), {
       
       ### Auxiliary equations
-      # Total output (eq. 1)
+      # Total output 
       Y_0 <- K / nu
-      # Labour (eq. 4)
+      # Labour 
       L <- Y_0 / a
-      # Damages from climate change (eq. 31)
+      # Damages from climate change 
       Dam <- dam_curve(Temp, parms, options)
       
-      # emisssions reduction rate (eq. 26)
+      # emisssions reduction rate 
       n <- min((p_Car/((1 - options$subsidy) * p_BS))^(1/(theta - 1)), 1)
-      # Abatement costs (eq. 21)
+      # Abatement costs 
       A  <-  (sigma * p_BS / (1000 * theta)) * n^theta  
-      # Productive output (eq. 2)
+      # Productive output 
       Y <- (1-Dam)*(1-A)*Y_0
-      # Industrial emissions (eq. 15)
+      # Industrial emissions 
       E_ind  <- sigma * (1 - n) * Y_0 
-      # Total emissions (eq. 19)
+      # Total emissions
       E  <- E_ind + E_land 
-      # Carbon tax (eq. 23)
+      # Carbon tax
       Tax <- (p_Car * conv10to15 * E_ind)
-      # Subsidy (eq. 24)
+      # Subsidy 
       Subsidy <- options$subsidy * A * Y_0   
-      # Net transfer (eq. 25)
+      # Net transfer 
       Net_transfer <- Subsidy - Tax
-      # Profits (eq. 8)
+      # Profits 
       Profits <- p * Y - w * L - r * debt + p * Net_transfer
-      # profit share(eq. 11)
+      # profit share
       profit_share <- Profits / (p * Y)
-      # wage share (eq. 11)
+      # wage share 
       omega <- w * L / (p * Y)
-      # employment rate (eq. 7)
+      # employment rate
       lambda <- L / pop
-      # inflation (eq. 14)
+      # inflation
       i  <- infl(omega,parms)
-      # investment (eq. 9)
+      # investment 
       investmt <- inv(profit_share,parms) * Y
       # dividends
       dividends <- div(profit_share,parms) * p * Y
@@ -100,27 +100,27 @@ simulation <- function(time, init_state, parms, options = options,
       phill <- phill(lambda,parms)
       
       ### Differential system 
-      # capital (eq. 2)
+      # capital 
       d_K <- investmt - delta * K
-      # labour productivity (eq. 5)
+      # labour productivity
       d_a <- alpha * a
-      # population (eq. 6)
+      # population
       d_pop <- pop * pop_dyn(pop,parms) #beta * pop
-      # debt (eq. 9)
+      # debt 
       d_debt <- p * investmt - Profits + dividends
-      # wages (eq. 13)
+      # wages 
       d_w <- w * (phill + gamma * i)
-      # prices (eq. 14)
+      # prices 
       d_p <- i * p
-      # Emissions reduction (eqs. 16 & 17)
+      # Emissions reduction 
       d_sigma     <- g_sigma * sigma
       d_g_sigma   <- delta_g_sigma * g_sigma
-      # land based emissions gradient (eq. 18)
+      # land based emissions gradient 
       d_E_land <- delta_E_land * E_land 
-      # Backstop technology price (eq. 20)
+      # Backstop technology price
       d_p_BS      <- g_p_BS * p_BS
-      # Carbon price (eq. 22)
-      d_p_Car <- carbon_slope
+      # Carbon price 
+      d_p_Car <- carbon_price(p_Car,parms,options,time,state)
       
       ### Climate Module
       # CO2 accumulation
@@ -144,12 +144,12 @@ simulation <- function(time, init_state, parms, options = options,
       # Radiative forcing
       #browser()
       F_exo   <- F_exo(t = counter, pars = parms)
-      # Industrial forcing (eq. 28)
+      # Industrial forcing 
       F_ind   <- (F2xCO2 / log(2)) * log(CO2_AT / CO2_AT_preind)
-      # Total forcing (eq. 29)
+      # Total forcing 
       Forcing <- F_ind + F_exo 
       
-      # Temperature change (eqs. 30 & 31)
+      # Temperature change
       d_Temp <- Forcing/C - F2xCO2/(C * S) * Temp -  (gamma_star / C) *
         (Temp - Temp_LO)
       d_Temp_LO <- (gamma_star / C0) * (Temp - Temp_LO)
@@ -177,13 +177,6 @@ simulation <- function(time, init_state, parms, options = options,
         d_counter =  d_counter
       )
       
-      #browser()
-      
-      # for (i in 1:length(grad)){
-      #   if (is.nan(grad[i])){
-      #     browser()
-      #   }
-      # }
       # ===========================================================================
       ## Return the list of gradients 
       return(list(grad))

@@ -87,6 +87,11 @@ Parms <- c(
   g_p_BS  = -0.0051,  # Exogenous growth rate of the price of backstop technology  (Bovari et al. 2018a,b)
   beta_C  = 0.0124,   #(Bovari et al. 2018a,b)
   S_ref   = 2.9,      #(Bovari et al. 2018a,b)
-  carbon_slope = 1,  # chosen by us
-  conv10to15     = 1.160723971/1000   # currency conversion #(Bovari et al. 2018a,b code/private correspondence)
+  carbon_parm = 0.02,  # Nordhaus path
+  carbon_slope = 2,
+  conv10to15     = 1.160723971/1000,   # currency conversion #(Bovari et al. 2018a,b code/private correspondence)
+  p_Car_step_year_1 = 2020,
+  p_Car_step_year_2 = 2030,
+  p_Car_val_1 = 1.05543*1.05405*1.05494*1.07863*1.02471*80,  # conversion from AFD code
+  p_Car_val_2 = 1.05543*1.05405*1.05494*1.07863*1.02471*100
 )

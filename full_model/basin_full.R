@@ -72,6 +72,7 @@ compute.basin.full <- function(n_pts, type = 'sobol', end_time = 2500,
     Options <- list(
       invest = 'lin', 
       damage_scenario = dam,
+      p_carb_scheme = "Stern-Stiglitz",
       subsidy = 0.5   # fraction of abatement costs subsidized by government
     )
     
