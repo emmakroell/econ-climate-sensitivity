@@ -9,6 +9,9 @@ library('tidyverse')
 # library('rgl')
 # library('gMOIP')
 
+## ncores <- getOption("mc.cores", 1)
+ncores <- 10
+
 # Source model code
 source('reduced_model/pars.R')    # load parameters
 source('reduced_model/funcs.R')   # load functions
@@ -62,12 +65,9 @@ compute.basin.reduced <- function(n_pts, eta=0.192, markup = 1.18,
     Parms[['eta_p']] = eta
     Parms[['markup']] = markup
     Parms[['gamma']] = gamma
-    
-    # for loop
-    for (i in seq(1,nrow(grid))){
-      #cat(i, 'out of', nrow(grid), '\n')
-      
-      # Set initial conditions 
+
+   loop_fun <- function(i) {
+                # Set initial conditions 
       IC <- c(
         lambda = grid[i,1], 
         omega  = grid[i,2],
@@ -94,13 +94,24 @@ compute.basin.reduced <- function(n_pts, eta=0.192, markup = 1.18,
                                method     = 'lsoda'))
       
       # record result for all stopping points and original IC
-      result[[i]] <- as_tibble(Sim) %>% 
+      res <- as_tibble(Sim) %>% 
         filter(year %in% stopping_points) %>% 
         mutate(lambda.ic = IC[['lambda']],
                omega.ic = IC[['omega']],
                debt.ic = IC[['debt']])
-      }
-    # Save results
+             return(res)
+      } ## loop_fun
+
+    # for loop
+    if (ncores==1) {
+        for (i in seq(1,nrow(grid))){
+            #cat(i, 'out of', nrow(grid), '\n')
+            results[[i]] <- loop_fun(i)
+        }
+    } else {
+        results <- parallel::mclapply(seq(nrow(grid)), loop_fun,
+                                      mc.cores = ncores)
+    }   # Save results
     save(result, file=savefile)
   } else { 
     # read in the data 
@@ -214,4 +225,5 @@ result_3d3 <- compute.basin.reduced(n_pts=20, markup=1.875, end_time = 2500,
 #   dplyr::summarise(lambda.eq = median(lambda),
 #                    omega.eq = median(omega),
 #                    debt.eq = median(debt_share))
+
 
