@@ -9,8 +9,10 @@ library('tidyverse')
 # library('rgl')
 # library('gMOIP')
 
-## ncores <- getOption("mc.cores", 1)
-ncores <- 10
+## SET 'ncores' here for parallel computation
+## (left equal to 1 by default, unless edited, for safety)
+ncores <- getOption("mc.cores", 1)
+## ncores <- 10
 
 # Source model code
 source('reduced_model/pars.R')    # load parameters
@@ -109,7 +111,10 @@ compute.basin.reduced <- function(n_pts, eta=0.192, markup = 1.18,
             results[[i]] <- loop_fun(i)
         }
     } else {
-        results <- parallel::mclapply(seq(nrow(grid)), loop_fun,
+        papply <- if (!require("pbmcapply")) parallel::mclapply else pbmclapply
+
+        ## pbmclapply for progress bar (may only work in interactive mode?)
+        results <- papply(seq(nrow(grid)), loop_fun,
                                       mc.cores = ncores)
     }   # Save results
     save(result, file=savefile)
