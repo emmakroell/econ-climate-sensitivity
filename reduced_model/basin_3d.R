@@ -12,12 +12,15 @@ library('tidyverse')
 ## SET 'ncores' here for parallel computation
 ## (left equal to 1 by default, unless edited, for safety)
 ncores <- getOption("mc.cores", 1)
-## ncores <- 10
+## ncores <- 16
 
 # Source model code
 source('reduced_model/pars.R')    # load parameters
 source('reduced_model/funcs.R')   # load functions
 source('reduced_model/sim.R')     # load simulation file 
+
+results_dir <- 'reduced_model/basin_res'
+if (!dir.exists(results_dir)) dir.create(results_dir)
 
 #------------------------------------------------------------------------------
 # function creates grid of initial conditions
@@ -54,14 +57,11 @@ compute.basin.reduced <- function(n_pts, eta=0.192, markup = 1.18,
                              stopping_points = c(2100,2300,2500),
                              type='sobol'){
   # name file to save data:
-  savefile <- sprintf("reduced_model/basin_res/npts_%g_type_%s_eta_%g_mark_%g_gam_%g_end_%g.Rdata",
-                      n_pts, type, eta, markup, gamma, end_time)
+  savefile <- sprintf("%s/npts_%g_type_%s_eta_%g_mark_%g_gam_%g_end_%g.Rdata",
+                      results_dir, n_pts, type, eta, markup, gamma, end_time)
   if (!file.exists(savefile)) {
     # set-up grid
     grid <- create.ic.grid(n_pts = n_pts, type = type)
-
-    # list to save the results
-    result <- vector("list",nrow(grid))
 
     # set parameters
     Parms[['eta_p']] = eta
@@ -106,6 +106,7 @@ compute.basin.reduced <- function(n_pts, eta=0.192, markup = 1.18,
 
     # for loop
     if (ncores==1) {
+        results <- vector("list",nrow(grid))
         for (i in seq(1,nrow(grid))){
             #cat(i, 'out of', nrow(grid), '\n')
             results[[i]] <- loop_fun(i)
@@ -115,19 +116,19 @@ compute.basin.reduced <- function(n_pts, eta=0.192, markup = 1.18,
 
         ## pbmclapply for progress bar (may only work in interactive mode?)
         results <- papply(seq(nrow(grid)), loop_fun,
-                                      mc.cores = ncores)
+                          mc.cores = ncores)
     }   # Save results
-    save(result, file=savefile)
+    save(results, file=savefile)
   } else { 
     # read in the data 
     load(savefile)
   }
-  return(result)
+  return(results)
 }
 
 #------------------------------------------------------------------------------
 # function to unpack list into a tibble
-# there is probably a way to find this with purr but I didn't find it
+# there is probably a way to find this with purrr but I didn't find it
 ##' @param res output of compute.basin.reduced
 ##' @return res reshaped into a single tibble
 flatten.result <- function(res){

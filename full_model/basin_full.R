@@ -12,6 +12,14 @@ source('full_model/pars.R')     # load parameters
 source('full_model/funcs.R')    # load functions
 source('full_model/sim.R')      # load simulation file
 
+results_dir <- 'full_model/basin_res'
+if (!dir.exists(results_dir)) dir.create(results_dir)
+
+## SET 'ncores' here for parallel computation
+## (left equal to 1 by default, unless edited, for safety)
+## ncores <- getOption("mc.cores", 1)
+ncores <- 16
+
 #================================================================================
 # function creates grid of initial conditions
 create.ic.grid <- function(n_pts=20, type = 'grid'){
@@ -48,14 +56,11 @@ compute.basin.full <- function(n_pts, type = 'sobol', end_time = 2500,
                                dam = "Nordhaus",stopping_points = c(2100,2300,2500),
                                eta=0.192, markup = 1.18, gamma=0.9){
   # name file to save data:
-  savefile <- sprintf("full_model/basin_res/npts_%g_type_%s_eta_%g_markup_%g_gamma_%g_dam_%s_end%g.Rdata",
-                      n_pts, type, eta, markup, gamma, dam, end_time)
+  savefile <- sprintf("%s/npts_%g_type_%s_eta_%g_markup_%g_gamma_%g_dam_%s_end%g.Rdata",
+                      results_dir,n_pts, type, eta, markup, gamma, dam, end_time)
   if (!file.exists(savefile)) {
     # set-up grid
     grid <- create.ic.grid(n_pts = n_pts, type = type)
-    
-    # list to save the results
-    result <- vector("list",nrow(grid))
     
     # set parameters
     Parms[['eta_p']] = eta
@@ -75,12 +80,9 @@ compute.basin.full <- function(n_pts, type = 'sobol', end_time = 2500,
       p_carb_scheme = "Stern-Stiglitz",
       subsidy = 0.5   # fraction of abatement costs subsidized by government
     )
-    
-    # for loop
-    for (i in seq(1,nrow(grid))){
-      #cat(i, 'out of', nrow(grid), '\n')
-      
-      # Set initial conditions 
+
+    loop_fun <- function(i) {
+                # Set initial conditions 
       lambda_init <- grid[i,1]
       omega_init <- grid[i,2]
       debt_share_init <- grid[i,3]
@@ -113,19 +115,34 @@ compute.basin.full <- function(n_pts, type = 'sobol', end_time = 2500,
                         method     = 'lsoda')
       
       # record result for all stopping points and price params
-      result[[i]] <- as_tibble(Sim) %>% 
+      result <- as_tibble(Sim) %>% 
         filter(year %in% stopping_points) %>% 
         mutate(lambda.ic = lambda_init,
                omega.ic = omega_init,
                debt.ic = debt_share_init)
-    }
-    # Save results
-    save(result, file=savefile)
+       return(result)
+    } ## loop_fun
+
+    if (ncores==1) {
+        results <- vector("list",nrow(grid))
+        for (i in seq(1,nrow(grid))){
+            #cat(i, 'out of', nrow(grid), '\n')
+            results[[i]] <- loop_fun(i)
+        }
+    } else {
+        papply <- if (!require("pbmcapply")) parallel::mclapply else pbmclapply
+
+        ## pbmclapply for progress bar (may only work in interactive mode?)
+        results <- papply(seq(nrow(grid)), loop_fun,
+                          mc.cores = ncores)
+    }   # Save results
+
+    save(results, file=savefile)
   } else { 
     # read in the data 
     load(savefile)
   }
-  return(result)
+  return(results)
 }
 #-----------------------------------------------------------------------------
 # function to unpack list into a tibble
