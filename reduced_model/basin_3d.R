@@ -218,7 +218,7 @@ result_3d2 <- compute.basin.reduced(n_pts=20, markup=1.3, end_time = 2500,
 result_3d3 <- compute.basin.reduced(n_pts=20, markup=1.875, end_time = 2500,
                                     stopping_points = c(2100,2300,2500))
 
-# result3 <- result_3d3 %>% flatten.result() %>% categorize.result()
+# result3 <- result_3d3 %>% bind_rows() %>% categorize.result()
 # 
 # # Find equilibrium
 # result3 %>% filter(outcome == "good", year == 2500) %>%

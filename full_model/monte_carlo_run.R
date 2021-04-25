@@ -13,7 +13,7 @@ source("full_model/param_dist.R") # load parameter distributions
 source("full_model/monte_carlo_sim.R") # load monte carlo functions
 
 # Number of iterations
-iter <- 100
+iter <- 1000
 
 # Set up simulations
 lambda_init <-0.675
@@ -65,8 +65,8 @@ savefile <- sprintf("full_model/MC_res/niter_%g_dam_%s.Rdata",
                     iter, dam)
 if (!file.exists(savefile)){
   mc_nofeedback <- data_simulations(iter)
-  bad_runs <- vapply(mc_nofeedback,is.character,FUN.VALUE=logical(1))
-  mc_nofeedback <- mc_nofeedback[!bad_runs]
+  # bad_runs <- vapply(mc_nofeedback,is.character,FUN.VALUE=logical(1))
+  # mc_nofeedback <- mc_nofeedback[!bad_runs]
   save(mc_nofeedback, file=savefile)
 } else{
   load(savefile)
@@ -127,8 +127,8 @@ savefile <- sprintf("full_model/MC_res/niter_%g_dam_%s.Rdata",
                     iter, dam)
 if (!file.exists(savefile)){
   mc_dam <- data_simulations(iter)
-  bad_runs <- vapply(mc_dam,is.character,FUN.VALUE=logical(1))
-  mc_dam <- mc_dam[!bad_runs]
+  # bad_runs <- vapply(mc_dam,is.character,FUN.VALUE=logical(1))
+  # mc_dam <- mc_dam[!bad_runs]
   save(mc_dam, file=savefile)
 } else{
   load(savefile)
