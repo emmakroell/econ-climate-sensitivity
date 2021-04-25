@@ -7,8 +7,8 @@ library('tidyverse')
 
 ## SET 'ncores' here for parallel computation
 ## (left equal to 1 by default, unless edited, for safety)
-## ncores <- getOption("mc.cores", 1)
-ncores <- 16
+ncores <- getOption("mc.cores", 1)
+## ncores <- 16
 
 source('full_model/pars.R')     # load parameters
 source('full_model/funcs.R')    # load functions
@@ -126,7 +126,7 @@ explore.parm.space <- function(n_pts, type, end_time = 2300, dam = "10at4",
           results <- vector("list",nrow(grid))
         for (i in seq(1,nrow(grid))){
             #cat(i, 'out of', nrow(grid), '\n')
-            results[[i]] <- loop_fun(i)
+           results[[i]] <- loop_fun(i)
         }
     } else {
         papply <- if (!require("pbmcapply")) parallel::mclapply else pbmclapply
@@ -136,7 +136,7 @@ explore.parm.space <- function(n_pts, type, end_time = 2300, dam = "10at4",
                           mc.cores = ncores)
     }
 
-    save(result, file=savefile)
+    save(results, file=savefile)
   } else { 
     # read in the data 
     load(savefile)
