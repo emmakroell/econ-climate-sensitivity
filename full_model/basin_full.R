@@ -4,7 +4,7 @@ library('deSolve')
 # library('RColorBrewer')
 library('qrng')
 library('tidyverse')
-# library('plotly')
+library('plotly')
 # library('rgl')
 # library('gMOIP')
 
@@ -145,18 +145,6 @@ compute.basin.full <- function(n_pts, type = 'sobol', end_time = 2500,
   return(results)
 }
 #-----------------------------------------------------------------------------
-# function to unpack list into a tibble
-# there is probably a way to find this with purr but I didn't find it
-##' @param res output of compute.basin.reduced
-##' @return res reshaped into a single tibble
-flatten.result <- function(res){
-  out <- res[[1]]
-  for (i in 2:length(res)){
-    out <- rbind(out,res[[i]])
-  }
-  return(out)
-}
-
 # function to categorize result
 ##' @param res flattened output of compute.basin.reduced (single tibble with all years)
 ##' @return res with an additional variable 'outcome' containing categorized result
@@ -196,13 +184,13 @@ interactive.scatter <- function(result){
 result1 <- compute.basin.full(n_pts=20, markup=1.18, end_time = 2500,
                               stopping_points = c(2100,2300,2500))
 
-# result1 <- result1 %>% flatten.result() %>% categorize.result()
+result1 <- result1 %>% bind_rows() %>% categorize.result()
 
 # Find equilibrium
-# result1 %>% filter(outcome == "good", year == 2500) %>%
-#   ggplot(aes(omega,lambda,colour=lambda.ic)) +
-#   geom_point() + theme_bw()
-# # appears to be approaching a single equilibrium
+result1 %>% filter(outcome == "good", year == 2500) %>%
+  ggplot(aes(omega,lambda,colour=lambda.ic)) +
+  geom_point() + theme_bw()
+# appears to be approaching a single equilibrium
 # 
 # # compute equilibrium using median
 # equilibrium1 <- result1 %>% filter(outcome == "good", year == 2500) %>% 
@@ -218,13 +206,13 @@ result1 <- compute.basin.full(n_pts=20, markup=1.18, end_time = 2500,
 result2 <- compute.basin.full(n_pts=20, markup=1.3, end_time = 2500,
                 stopping_points = c(2100,2300,2500))
 
-# result2 <- result2 %>% flatten.result() %>% categorize.result()
-# 
-# # Find equilibrium
-# result2 %>% filter(outcome == "good", year == 2500) %>%
-#   ggplot(aes(omega,lambda,colour=lambda.ic)) +
-#   geom_point() + theme_bw()
-# # appears to be approaching a single equilibrium
+result2 <- result2 %>% bind_rows() %>% categorize.result()
+
+# Find equilibrium
+result2 %>% filter(outcome == "good", year == 2500) %>%
+  ggplot(aes(omega,lambda,colour=debt_share)) +
+  geom_point() + theme_bw()
+# appears to be approaching a single equilibrium
 # 
 # # compute equilibrium using median
 # equilibrium2 <- result2 %>% filter(outcome == "good", year == 2500) %>% 
@@ -236,12 +224,12 @@ result2 <- compute.basin.full(n_pts=20, markup=1.3, end_time = 2500,
 result3 <- compute.basin.full(n_pts=20, markup=1.875, end_time = 2500,
                               stopping_points = c(2100,2300,2500))
 
-# result3 <- result3 %>% flatten.result() %>% categorize.result()
-# 
-# # Find equilibrium
-# result3 %>% filter(outcome == "good", year == 2500) %>%
-#   ggplot(aes(omega,lambda,colour=lambda.ic)) +
-#   geom_point() + theme_bw()
+result3 <- result3 %>% bind_rows() %>% categorize.result()
+
+# Find equilibrium
+result3 %>% filter(outcome == "good", year == 2500) %>%
+  ggplot(aes(omega,lambda,colour=debt_share)) +
+  geom_point() + theme_bw()
 
 # # compute equilibrium using median
 # equilibrium3 <- result3 %>% filter(outcome == "good", year == 2500) %>% 
@@ -249,4 +237,5 @@ result3 <- compute.basin.full(n_pts=20, markup=1.875, end_time = 2500,
 #                    omega.eq = median(omega),
 #                    debt.eq = median(debt_share))
 # 
+
 

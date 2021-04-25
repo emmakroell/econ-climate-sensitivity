@@ -293,7 +293,7 @@ plot_lambda <- plot_lambda + ggtitle("Employment rate")
 plot_growth_Y <- plot_growth_Y + ggtitle("Output growth")
 plot_debt_share <- plot_debt_share + 
   coord_cartesian(xlim = c(2016, 2100), ylim = c(0,5)) +
-  ggtitle("Debt share")
+  ggtitle("Debt ratio")
 plot_infl <- plot_infl + ggtitle("Inflation")
 plot_emissions <- plot_emissions + ggtitle("Emissions")
 plot_temp <- plot_temp + ggtitle("Temperature")

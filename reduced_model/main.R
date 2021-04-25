@@ -16,7 +16,7 @@ source('reduced_model/sim.R')    # load simulation file
 #==============================================================================
 ### Set initial conditions 
 IC <- c(
-  lambda  =  0.675, 
+  lambda  =  0.2,#0.675, 
   omega   =  0.578,
   debt    =  1.53,
   pop     =  4.83
@@ -25,7 +25,7 @@ IC <- c(
 # Set up simulation
 Time <- c(
   start         =     2016, 
-  end           =     2100,
+  end           =     3000,
   step          =     0.05
 )
 

@@ -5,7 +5,7 @@ library('deSolve')
 # library('RColorBrewer')
 library('qrng')
 library('tidyverse')
-# library('plotly')
+library('plotly')
 # library('rgl')
 # library('gMOIP')
 
@@ -127,18 +127,6 @@ compute.basin.reduced <- function(n_pts, eta=0.192, markup = 1.18,
 }
 
 #------------------------------------------------------------------------------
-# function to unpack list into a tibble
-# there is probably a way to find this with purrr but I didn't find it
-##' @param res output of compute.basin.reduced
-##' @return res reshaped into a single tibble
-flatten.result <- function(res){
-  out <- res[[1]]
-  for (i in 2:length(res)){
-    out <- rbind(out,res[[i]])
-  }
-  return(out)
-}
-
 # function to categorize result
 ##' @param res flattened output of compute.basin.reduced (single tibble with all years)
 ##' @return res with an additional variable 'outcome' containing categorized result
@@ -178,19 +166,19 @@ interactive.scatter <- function(result){
 result_3d1 <- compute.basin.reduced(n_pts=20, markup=1.18, end_time = 2500,
                                     stopping_points = c(2100,2300,2500))
 
-# result1 <- result_3d1 %>% flatten.result() %>% categorize.result()
-# 
-# # Find equilibrium
-# result1 %>% filter(outcome == "good", year == 2500) %>%
-#   ggplot(aes(omega,lambda,colour=debt_share)) +
-#   geom_point() + theme_bw()
-# # appears to be approaching a single equilibrium
-# 
-# # compute equilibrium using median
-# equilibrium1 <- result1 %>% filter(outcome == "good", year == 2500) %>% 
-#   dplyr::summarise(lambda.eq = median(lambda),
-#                     omega.eq = median(omega),
-#                     debt.eq = median(debt_share))
+result1 <- result_3d1 %>% bind_rows() %>% categorize.result()
+
+# Find equilibrium
+result1 %>% filter(outcome == "good", year == 2500) %>%
+  ggplot(aes(omega,lambda,colour=debt_share)) +
+  geom_point() + theme_bw()
+# appears to be approaching a single equilibrium
+
+# compute equilibrium using median
+equilibrium1 <- result1 %>% filter(outcome == "good", year == 2500) %>%
+  dplyr::summarise(lambda.eq = median(lambda),
+                    omega.eq = median(omega),
+                    debt.eq = median(debt_share))
 
 # plot output
 #interactive.scatter(result1)
@@ -200,14 +188,14 @@ result_3d1 <- compute.basin.reduced(n_pts=20, markup=1.18, end_time = 2500,
 result_3d2 <- compute.basin.reduced(n_pts=20, markup=1.3, end_time = 2500,
                                     stopping_points = c(2100,2300,2500))
 
-# result2 <- result_3d2 %>% flatten.result() %>% categorize.result()
-# 
-# # Find equilibrium
-# result2 %>% filter(outcome == "good", year == 2500) %>%
-#   ggplot(aes(omega,lambda,colour=debt_share)) +
-#   geom_point() + theme_bw()
-# # appears to be approaching a single equilibrium
-# 
+result2 <- result_3d2 %>% bind_rows() %>% categorize.result()
+
+# Find equilibrium
+result2 %>% filter(outcome == "good", year == 2500) %>%
+  ggplot(aes(omega,lambda,colour=debt_share)) +
+  geom_point() + theme_bw()
+# appears to be approaching a single equilibrium
+
 # # compute equilibrium using median
 # equilibrium2 <- result2 %>% filter(outcome == "good", year == 2500) %>% 
 #   dplyr::summarise(lambda.eq = median(lambda),
@@ -218,13 +206,13 @@ result_3d2 <- compute.basin.reduced(n_pts=20, markup=1.3, end_time = 2500,
 result_3d3 <- compute.basin.reduced(n_pts=20, markup=1.875, end_time = 2500,
                                     stopping_points = c(2100,2300,2500))
 
-# result3 <- result_3d3 %>% bind_rows() %>% categorize.result()
-# 
-# # Find equilibrium
-# result3 %>% filter(outcome == "good", year == 2500) %>%
-#   ggplot(aes(omega,lambda,colour=debt_share)) +
-#   geom_point() + theme_bw()
-# # appears to be approaching a single equilibrium
+result3 <- result_3d3 %>% bind_rows() %>% categorize.result()
+
+# Find equilibrium
+result3 %>% filter(outcome == "good", year == 2500) %>%
+  ggplot(aes(omega,lambda,colour=debt_share)) +
+  geom_point() + theme_bw()
+# appears to be approaching a single equilibrium
 # 
 # # compute equilibrium using median
 # equilibrium3 <- result3 %>% filter(outcome == "good", year == 2500) %>% 
