@@ -4,9 +4,18 @@ library('qrng')
 library('tidyverse')
 #library('plotly')
 
+
+## SET 'ncores' here for parallel computation
+## (left equal to 1 by default, unless edited, for safety)
+ncores <- getOption("mc.cores", 1)
+## ncores <- 16
+
 source('reduced_model/pars.R')   # load parameters
 source('reduced_model/funcs.R')  # load functions
 source('reduced_model/sim.R')    # load simulation file
+
+results_dir <- 'reduced_model/parms_res'
+if (!dir.exists(results_dir)) dir.create(results_dir)
 
 #================================================================================
 create.parm.grid <- function(n_pts=20, type = 'sobol'){
@@ -42,8 +51,8 @@ explore.parm.space.3d <- function(n_pts, type, end_time = 2300,
                                lambda_init=0.9, omega_init=0.9,
                                debt_init = 0.3){
   # name file to save data:
-  savefile <- sprintf("reduced_model/parms_res/npts_%g_type_%s_lambs_%g_omg_%g_d_%g_end%g.Rdata",
-                      n_pts, type, lambda_init, omega_init, debt_init, end_time)
+  savefile <- sprintf("%s/npts_%g_type_%s_lambs_%g_omg_%g_d_%g_end%g.Rdata",
+                      results_dir, n_pts, type, lambda_init, omega_init, debt_init, end_time)
   if (!file.exists(savefile)) {
     # Set initial conditions 
     IC <- c(
@@ -68,9 +77,8 @@ explore.parm.space.3d <- function(n_pts, type, end_time = 2300,
     grid <- create.parm.grid (n_pts = n_pts, type = type)
     # list to save the results
     result <- vector("list",nrow(grid))
-    
-    # for loop
-    for (i in seq(1,nrow(grid))){
+
+    loop_fun <- function(i) {
       #cat(i, 'out of', nrow(grid), '\n')
       Parms[['eta_p']] = grid[i,1]
       Parms[['markup']] = grid[i,2]
@@ -82,22 +90,41 @@ explore.parm.space.3d <- function(n_pts, type, end_time = 2300,
                             parms   = Parms,
                             options = Options,
                             method = 'lsoda'))
-      
+
+      if (inherits(Sim, "try-error")) return(Sim)
+        
       # record result for all stopping points and price params
-      result[[i]] <- as_tibble(Sim) %>% 
+      result <- as_tibble(Sim) %>% 
         filter(year %in% stopping_points) %>% 
         mutate(eta = Parms[['eta_p']],
                markup = Parms[['markup']],
                gamma = Parms[['gamma']])
-      }
+        
+      return(result)
+    }
+   
+    # for loop
+    if (ncores==1) {
+        results <- vector("list",nrow(grid))
+        for (i in seq(1,nrow(grid))){
+            #cat(i, 'out of', nrow(grid), '\n')
+            results[[i]] <- loop_fun(i)
+        }
+    } else {
+        papply <- if (!require("pbmcapply")) parallel::mclapply else pbmclapply
+
+        ## pbmclapply for progress bar (may only work in interactive mode?)
+        results <- papply(seq(nrow(grid)), loop_fun,
+                          mc.cores = ncores)
+    }
     # Save results
-    save(result, file=savefile)
+    save(results, file=savefile)
     } else { 
     # read in the data 
-    load(savefile)
-      }
-  return(result)
-  }
+        load(savefile)
+    }
+  return(results)
+}
 
 #-----------------------------------------------------------------------------
 # function to unpack list into a tibble
