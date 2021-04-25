@@ -103,9 +103,11 @@ carbon_price <- function(p_Car,pars,options,time,state){
   if(p_Car >= state[['p_BS']]) {
     p_Car = state[['p_BS']]
   }
-  
+
+  p_carb_scheme <- options$p_carb_scheme
+  if (is.null(p_carb_scheme)) p_carb_scheme <- "None"  
   # Stern-Stiglitz carbon pricing scheme:
-  if (options$p_carb_scheme == 'Stern-Stiglitz'){
+  if (p_carb_scheme =='Stern-Stiglitz') {
     if (state[['counter']] <= (pars[['p_Car_step_year_1']] - time[['start']])) {
       d_p_Car <- (pars[['p_Car_val_1']] - pars[['p_Car_start']]) /
         (pars[['p_Car_step_year_1']] - time[['start']])
@@ -115,7 +117,7 @@ carbon_price <- function(p_Car,pars,options,time,state){
     }
     
     # No carbon pricing
-  }  else if (options$p_carb_scheme == 'None'){
+  }  else if (p_carb_scheme == 'None'){
     d_p_Car   <- pars[['g_p_BS']] * p_Car
   }
   return(d_p_Car)
