@@ -51,8 +51,8 @@ Time <- c(
 
 Options <- list(
   invest = 'lin',  # exp / arctan / lin
-  damage_scenario = 'Nordhaus',
-  p_carb_scheme = "Stern-Stiglitz",
+  damage_scenario =  "Nordhaus", #'Nordhaus',
+  p_carb_scheme =  "Stern-Stiglitz",
   subsidy = 0.5   # fraction of abatement costs subsidized by government
 )
 
@@ -70,5 +70,4 @@ as_tibble(Sim) %>% mutate(Y = K / 2.7) %>%
   mutate(variable = factor(variable, levels = c("Y", "debt_share", "lambda", "p_Car", "E", "Temp"))) %>% 
   ggplot(aes(year,value,colour = variable)) + geom_line(size=1.1) +
   facet_wrap(~variable, scale = "free") + theme_bw()
-ggsave("plot.png",height = 5, width =7)
 

@@ -6,15 +6,14 @@ library(gridExtra)
 
 
 set.seed(720)
-## Run the model once
-source("full_model/main.R") 
-# load parameter distributions
-source("full_model/param_dist.R") 
-# Load monte carlo functions
-source("full_model/monte_carlo_sim.R") 
+source('full_model/pars.R')     # load parameters
+source('full_model/funcs.R')    # load functions
+source('full_model/sim.R')      # load simulation file
+source("full_model/param_dist.R") # load parameter distributions
+source("full_model/monte_carlo_sim.R") # load monte carlo functions
 
 # Number of iterations
-iter <- 1000
+iter <- 100
 
 # Set up simulations
 lambda_init <-0.675
@@ -56,9 +55,9 @@ dam <- 'None'
 Options <- list(
   invest = 'lin',  # exp / arctan / lin
   damage_scenario = dam,
+  p_carb_scheme = "None",
   subsidy = 0   # fraction of abatement costs subsidized by government
 )
-Parms[['carbon_slope']] = 0
 
 ## MONTE CARLO SIMULATION
 # name file to save data:
@@ -114,13 +113,13 @@ ggplot(mc_nofeedback_summarized,aes(year,y=median,ymin=lwr,ymax=upr))+
 
 #==============================================================================
 # Model with damages and policy
-dam <- '10at4'
+dam <- 'Nordhaus'
 Options <- list(
   invest = 'lin',  # exp / arctan / lin
   damage_scenario = dam,
+  p_carb_scheme = "Stern-Stiglitz", 
   subsidy = 0.5   # fraction of abatement costs subsidized by government
 )
-Parms[['carbon_slope']] = 1
 
 
 ## MONTE CARLO SIMULATION

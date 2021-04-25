@@ -121,7 +121,6 @@ simulation <- function(time, init_state, parms, options = options,
       d_p_BS      <- g_p_BS * p_BS
       # Carbon price 
       d_p_Car <- carbon_price(p_Car,parms,options,time,state)
-      
       ### Climate Module
       # CO2 accumulation
       C02         <- matrix(c(CO2_AT,CO2_UP,CO2_LO),3,1)
@@ -208,21 +207,21 @@ simulation <- function(time, init_state, parms, options = options,
       A  <-  (sigma * p_BS / (1000 * theta)) * n^theta  
       # Remaining output
       Y <- (1-Dam)*(1-A)*Y_0
-      # Labour (eq. 2)
+      # Labour
       L <- Y / a
-      # Profits (eq. 7)
+      # Profits 
       Profits <- p * Y - w * L - r * debt
       # profit share
       profit_share <- Profits / (p * Y)
-      # wage share (eq. 10)
+      # wage share 
       omega <- w * L / (p * Y)
       # debt share
       debt_share <- debt / (p * Y)
-      # employment rate (eq. 6)
+      # employment rate
       lambda <- L / pop
-      # inflation (eq. 13)
+      # inflation
       i  <- infl(omega,parms)
-      # investment (eq. 8)
+      # investment 
       investmt <- inv(profit_share,parms) * Y
       # dividends
       dividends <- div(profit_share,parms) * p * Y
