@@ -55,25 +55,25 @@ categorize.result <- function(n,lambda_init,omega_init,debt_share_init,climate){
    
     # Set up simulation
     Time <- c(
-      start         =     2020, 
-      end           =     2100,
+      start         =     2016, 
+      end           =     2300,
       step          =     0.05
     )
     
     if (climate == TRUE){
       Options <- list(
         invest = 'lin',  # exp / arctan / lin
-        damage_scenario = "10at4",
+        damage_scenario =  "Nordhaus", 
+        p_carb_scheme =  "Stern-Stiglitz",
         subsidy = 0.5   # fraction of abatement costs subsidized by government
       )
-      Parms['carbon_slope'] = 1
     } else{
       Options <- list(
         invest = 'lin',  # exp / arctan / lin
-        damage_scenario = "None",
+        damage_scenario =  "None",
+        p_carb_scheme =  "None",
         subsidy = 0   # fraction of abatement costs subsidized by government
       )
-      Parms['carbon_slope'] = 0
     }
     
     # arrays to store outcomes

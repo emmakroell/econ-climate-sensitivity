@@ -239,7 +239,8 @@ simulation <- function(time, init_state, parms, options = options,
       Forcing <- F_ind + F_exo 
       
       if(montecarlo == T){
-        indices <- which((start + simulation$time) %in% seq(2020,2100,1))
+        indices <- which((start + simulation$time) %in% seq(2016,2100,1))
+        # 2016 start is hard coded (prob bad)
         sim_output <- data.frame(
           Y        = Y[indices],
           omega    = omega[indices],

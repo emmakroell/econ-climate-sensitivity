@@ -13,8 +13,8 @@ set.seed(720)
 
 # Set up simulation
 Time <- c(
-  start         =     2020, 
-  end           =     2100,
+  start         =     2016, 
+  end           =     2300,
   step          =     0.05
 )
 
@@ -124,9 +124,6 @@ model <- glm(outcome ~., data = na.omit(data_scaled), family = binomial)
 # Summarize the model
 logistic_res1 <- model
 (logistic_res1S <- summary(model))
-# climate coeffs aren't statistically significant - good since they shouldn't
-# affect the model with no feedback!
-# alpha also not sign
 
 col1_1 <- logistic_res1S$coefficients[2:5,1]
 

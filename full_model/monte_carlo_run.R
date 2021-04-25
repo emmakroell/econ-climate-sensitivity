@@ -43,7 +43,7 @@ IC <- c(
 )
 
 Time <- c(
-  start         =     2020, 
+  start         =     2016, 
   end           =     2100,
   step          =     0.05
 )
@@ -74,7 +74,7 @@ if (!file.exists(savefile)){
 
 # Reformulate data using tidyverse
 mc_nofeedback_tibble <- map(mc_nofeedback, ~tibble(
-  year=2020:2100, 
+  year=2016:2100, 
   lambda=.$sim.lambda,
   debt_share = .$sim.debt_share,
   growth_Y =(.$sim.Y-lag(.$sim.Y))/lag(.$sim.Y),
@@ -117,10 +117,9 @@ dam <- 'Nordhaus'
 Options <- list(
   invest = 'lin',  # exp / arctan / lin
   damage_scenario = dam,
-  p_carb_scheme = "Stern-Stiglitz", 
+  p_carb_scheme = "Stern-Stiglitz",
   subsidy = 0.5   # fraction of abatement costs subsidized by government
 )
-
 
 ## MONTE CARLO SIMULATION
 # name file to save data:
@@ -137,7 +136,7 @@ if (!file.exists(savefile)){
 
 # Reformulate data using tidyverse
 mc_dam_tibble <- map(mc_dam, ~tibble(
-  year = 2020:2100, 
+  year = 2016:2100, 
   lambda = .$sim.lambda,
   debt_share = .$sim.debt_share,
   growth_Y =(.$sim.Y-lag(.$sim.Y))/lag(.$sim.Y),
@@ -293,7 +292,7 @@ for (var in c('lambda', 'growth_Y', 'debt_share', 'infl', 'emissions', 'temp')){
 plot_lambda <- plot_lambda + ggtitle("Employment rate")
 plot_growth_Y <- plot_growth_Y + ggtitle("Output growth")
 plot_debt_share <- plot_debt_share + 
-  coord_cartesian(xlim = c(2020, 2100), ylim = c(0,5)) +
+  coord_cartesian(xlim = c(2016, 2100), ylim = c(0,5)) +
   ggtitle("Debt share")
 plot_infl <- plot_infl + ggtitle("Inflation")
 plot_emissions <- plot_emissions + ggtitle("Emissions")
