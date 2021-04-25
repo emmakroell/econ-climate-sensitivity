@@ -2,7 +2,7 @@ library('here')
 library('deSolve')
 library('qrng')
 library('tidyverse')
-#library('plotly')
+library('plotly')
 
 
 ## SET 'ncores' here for parallel computation
@@ -166,9 +166,9 @@ interactive.scatter <- function(result){
   ) %>%
     add_markers() %>%
     layout(
-      scene = list(xaxis = list(title = 'lambda'),
-                   yaxis = list(title = 'omega'),
-                   zaxis = list(title = 'd'))
+      scene = list(xaxis = list(title = 'eta'),
+                   yaxis = list(title = 'markup'),
+                   zaxis = list(title = 'gamma'))
     )
   return(p)
 }
@@ -180,22 +180,22 @@ result1 <- explore.parm.space.3d(n_pts=20, lambda_init = 0.9, omega_init=0.9,
                                  debt_init=0.3, type="sobol", end_time = 2300,
                                  stopping_points = c(2100,2200,2300))
 
-# result1 <- result1 %>% flatten.result() %>% categorize.result()
-# 
-# # looking at good outcomes out of curiosity
-# result1 %>% filter(outcome == "good", year == 2300) %>%
-#   ggplot(aes(omega,lambda,colour=debt_share)) +
-#   geom_point() + theme_bw()
+result1 <- result1 %>% bind_rows() %>% categorize.result()
 
-#interactive.scatter(result1)
+# looking at good outcomes out of curiosity
+result1 %>% filter(outcome == "good", year == 2300) %>%
+  ggplot(aes(omega,lambda,colour=debt_share)) +
+  geom_point() + theme_bw()
+
+interactive.scatter(result1 %>% filter(year == 2300))
 
 result2 <- explore.parm.space.3d(n_pts=20, lambda_init = 0.675, omega_init=0.578,
                               debt_init=1.53, type="sobol", end_time = 2300,
                               stopping_points = c(2100,2200,2300))
 
-# result2 <- result2 %>% flatten.result() %>% categorize.result()
-# 
-# # looking at good outcomes out of curiosity
-# result2 %>% filter(outcome == "good", year == 2300) %>%
-#   ggplot(aes(omega,lambda,colour=debt_share)) +
-#   geom_point() + theme_bw()
+result2 <- result2 %>% bind_rows() %>% categorize.result()
+
+# looking at good outcomes out of curiosity
+result2 %>% filter(outcome == "good", year == 2300) %>%
+  ggplot(aes(omega,lambda,colour=debt_share)) +
+  geom_point() + theme_bw()

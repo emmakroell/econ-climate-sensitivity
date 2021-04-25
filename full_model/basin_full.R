@@ -45,7 +45,7 @@ create.ic.grid <- function(n_pts=20, type = 'grid'){
 #================================================================================
 # main function for basin of attraction
 ##' @param n_pts number of points to run per dimension. Total runs is n_pts^3
-##' @param type method to se;ect the initial consitions
+##' @param type method to se;ect the initial conditions
 ##' @param end_time when to end the simulation
 ##' @param stopping_points vector of times to report results (should include end_time)
 ##' @param dam damage curve

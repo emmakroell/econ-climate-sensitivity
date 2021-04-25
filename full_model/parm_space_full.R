@@ -192,17 +192,24 @@ interactive.scatter <- function(result){
 
 #------------------------------------------------------------------------------
 # RESULTS
-result1 <- explore.parm.space(n_pts=20, lambda_init = 0.9, omega_init=0.9,
+result3 <- explore.parm.space(n_pts=20, lambda_init = 0.9, omega_init=0.9,
                               debt_init=0.3, type="sobol", end_time = 2300,
                               dam = "Nordhaus",stopping_points = c(2100,2200,2300))
 
-# result1 <- result1 %>% flatten.result() %>% categorize.result()
-# result1 %>% filter(year==2300, outcome == "good")
+# one run of 8000 went wrong somehow. It is removed.
+result3[[6939]] <- NULL
 
-result2 <- explore.parm.space(n_pts=20, lambda_init = 0.675, omega_init=0.578,
+result3 <- result3 %>% bind_rows() %>% categorize.result()
+result3 %>% filter(year==2300, outcome == "good") %>%
+  ggplot(aes(omega,lambda,colour=debt_share)) +
+  geom_point() + theme_bw()
+
+result4 <- explore.parm.space(n_pts=20, lambda_init = 0.675, omega_init=0.578,
                               dam = "Nordhaus", debt_init=1.53, type="sobol",
                               end_time = 2300, stopping_points = c(2100,2200,2300))
 
-# result2 <- result2 %>% flatten.result() %>% categorize.result()
-# result2 %>% filter(year==2300, outcome == "good")
+result4 <- result4 %>% bind_rows() %>% categorize.result()
+result4 %>% filter(year==2300, outcome == "good") %>%
+  ggplot(aes(omega,lambda,colour=debt_share)) +
+  geom_point() + theme_bw()
 
