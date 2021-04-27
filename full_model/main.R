@@ -1,12 +1,7 @@
 # MAIN FILE
 # Packages
-library("deSolve")
-library("RColorBrewer")
-
-# Colour palettes for graphs
-greens <- brewer.pal(n = 6, name = "Greens")
-colourful <- brewer.pal(n = 3, name = "Set1")
-colour2 <- brewer.pal(n = 3, name = "Set2")
+library(deSolve)
+library(tidyverse)
 
 # Set-up
 source('full_model/pars.R')     # load parameters
@@ -64,10 +59,12 @@ Sim <- simulation(time       = Time,
                   options    = Options,
                   method     = 'lsoda')
 
+# Make a plot:
 as_tibble(Sim) %>% mutate(Y = K / 2.7) %>% 
   select(year, Y, debt_share, lambda, p_Car, E, Temp) %>% 
   pivot_longer(cols = Y:Temp, names_to = 'variable', values_to = 'value') %>% 
-  mutate(variable = factor(variable, levels = c("Y", "debt_share", "lambda", "p_Car", "E", "Temp"))) %>% 
+  mutate(variable = factor(variable,levels = c("Y", "debt_share", "lambda",
+                                               "p_Car", "E", "Temp"))) %>% 
   ggplot(aes(year,value,colour = variable)) + geom_line(size=1.1) +
-  facet_wrap(~variable, scale = "free") + theme_bw()
+  facet_wrap(~variable, scale = "free") + theme_bw() 
 

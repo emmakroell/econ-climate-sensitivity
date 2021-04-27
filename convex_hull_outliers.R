@@ -116,14 +116,14 @@ result1_to_plot <- result1 %>% filter(year == 2300) %>%
   select(eta,markup,gamma,outcome) %>% 
   mutate(outcome = ifelse(outcome == "outside_bounds","error",outcome))
 
-convex_hull_plot(result1_to_plot, save_image=TRUE, name = "reduced_good_ic")
+convex_hull_plot(result1_to_plot, save_image=FALSE, name = "reduced_good_ic")
 
 unique(result2$outcome)
 result2_to_plot <- result2 %>% filter(year == 2300) %>% 
   select(eta,markup,gamma,outcome) %>% 
   mutate(outcome = ifelse(outcome == "outside_bounds","error",outcome))
 
-convex_hull_plot(result2_to_plot, save_image=TRUE, name = "reduced_bad_ic")
+convex_hull_plot(result2_to_plot, save_image=FALSE, name = "reduced_bad_ic")
 
 # full model
 source("full_model/parm_space_full.R")
@@ -132,13 +132,13 @@ result3_to_plot <- result3 %>% filter(year == 2300) %>%
   select(eta,markup,gamma,outcome) %>% 
   mutate(outcome = ifelse(outcome == "outside_bounds","error",outcome))
 
-convex_hull_plot(result3_to_plot, save_image=TRUE, name = "full_good_ic")
+convex_hull_plot(result3_to_plot, save_image=FALSE, name = "full_good_ic")
 
 unique(result4$outcome)
 result4_to_plot <- result4 %>% filter(year == 2300) %>% 
   select(eta,markup,gamma,outcome) %>% 
   mutate(outcome = ifelse(outcome == "outside_bounds","error",outcome))
-convex_hull_plot(result4_to_plot, save_image=TRUE, name = "full_bad_ic")
+convex_hull_plot(result4_to_plot, save_image=FALSE, name = "full_bad_ic")
 
 
 

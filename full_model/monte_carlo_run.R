@@ -302,4 +302,4 @@ plot_temp <- plot_temp + ggtitle("Temperature")
 grid.arrange(plot_lambda,plot_growth_Y,plot_debt_share,
              plot_infl, plot_emissions, plot_temp, nrow=2)
 
-#ggsave("figure4.pdf",height=7,width=5)
+#ggsave("figure4.pdf",height=5,width=7)

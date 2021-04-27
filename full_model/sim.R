@@ -276,6 +276,7 @@ simulation <- function(time, init_state, parms, options = options,
           p_Car = p_Car,
           p_BS = p_BS,
           Temp = Temp,
+          n = n,
           E = E)}
       
       return(sim_output)

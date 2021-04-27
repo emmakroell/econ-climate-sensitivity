@@ -17,8 +17,8 @@ if (!dir.exists(results_dir)) dir.create(results_dir)
 
 ## SET 'ncores' here for parallel computation
 ## (left equal to 1 by default, unless edited, for safety)
-## ncores <- getOption("mc.cores", 1)
-ncores <- 16
+ncores <- getOption("mc.cores", 1)
+# ncores <- 16
 
 #================================================================================
 # function creates grid of initial conditions

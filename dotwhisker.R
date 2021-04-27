@@ -63,25 +63,29 @@ gg0 <- (ggplot(L2,
 
 # FOR TIKZ
 
-# tnms <- c("Reduced model \nwithout climate",
+# tnms <- c("Economic model \nwithout climate",
 #           "Full model \nwithout damages \nor policy",
 #           "Full model \nwith damages \nand policy")
+# L <- map(1:3, ~bind_rows(list(PRCC=get_prcc(.),logistic=get_logist(.)), .id="type"))
+# names(L) <- tnms
+# L2 <- (bind_rows(L,.id="model"))
 # 
 # L2 <- mutate(L2,across(param, ~factor(.,levels=c("ECS", "C_UP", "alpha", "gamma", "eta", "markup"))),
-#              across(model, ~factor(.,levels=c("Reduced model \nwithout climate",
+#              across(model, ~factor(.,levels=c("Economic model \nwithout climate",
 #                                               "Full model \nwithout damages \nor policy",
 #                                               "Full model \nwith damages \nand policy")))) %>%
-#     drop_na(param) 
+#     drop_na(param) %>% mutate(type = ifelse(type == "logistic","Logistic Regression Coefficients",
+#                                             "Partial Rank Correlation Coefficients"))
 # 
 # library(tikzDevice)
 # options(tz="TO")
-# tikz(file = "dotwhisker.tex", width = 5, height = 3)
+# tikz(file = "dotwhisker.tex", width = 6, height = 3)
 # gg0 <- (ggplot(L2,
 #                aes(est, param, colour = model, xmin=lwr, xmax=upr)) +
 #             geom_pointrange(fatten=2, size=0.5) +
 #             facet_grid(model~type ,scale="free", space="free_y",) +
 #             geom_vline(xintercept=0,lty=2) +
-#             labs(x="",y="") + 
+#             labs(x="",y="") +
 #             scale_y_discrete(labels = c('eta' = '$\\bar \\eta$',
 #                                         'markup' = '$\\bar \\xi$',
 #                                         'gamma' = '$\\bar \\gamma$',
